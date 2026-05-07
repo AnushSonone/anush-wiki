@@ -6,6 +6,16 @@ Keep this file **short and operational**. Progress and narrative live in `IMPLEM
 
 Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in shipped files). Goals and constraints: `specs/design-philosophy-and-constraints.md`.
 
+## Implementation plan — before every build
+
+**Do not start a BUILD pass or edit `src/*` until `IMPLEMENTATION_PLAN.md` is current.**
+
+1. **Reconcile first:** Compare `IMPLEMENTATION_PLAN.md` to `specs/*` and the actual state of `src/*`. Fix the plan if **Open** / **Done** is wrong, tasks are missing, or priorities are stale (add, edit, reorder, or close items).
+2. **Then implement:** Pick the top **Open** task and execute it.
+3. **After the increment:** Update the plan again—mark work complete, note follow-ups or blockers—before committing (same as Ralph BUILD steps).
+
+Plan-only refreshes belong in **plan mode** (`./loop.sh plan` or `PROMPT_plan.md`); still **read** the plan before building even when you are not running the shell loop.
+
 ## Preview locally
 
 From repository root:

@@ -16,6 +16,7 @@ Prioritized tasks for the static site (`src/`). **IA = praneel**; **visuals = MF
 
 ## Notes
 
+- **`IMPLEMENTATION_PLAN.md` must be reconciled before every BUILD** (human or agent)—see `AGENTS.md` → *Implementation plan — before every build*.
 - Run **plan mode** after large spec edits: `./loop.sh plan`
 - Structure checklist: [specs/reference-analysis-praneelseth.md](specs/reference-analysis-praneelseth.md)
 - Visual checklist: [specs/visual-language-motherfuckingwebsite.md](specs/visual-language-motherfuckingwebsite.md)

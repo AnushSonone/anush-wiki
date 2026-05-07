@@ -12,7 +12,7 @@
 
 0c. Study `AGENTS.md` for validation commands (backpressure).
 
-0d. Application source lives in `src/*`.
+0e. **Reconcile `IMPLEMENTATION_PLAN.md`** against `specs/*` and `src/*` **before writing code** (per `AGENTS.md` → Implementation plan). Add, reorder, split, or close tasks so **Open** reflects what you are about to build; do not implement against a stale or empty plan unless you just updated it in this step.
 
 ---
 
