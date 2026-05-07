@@ -6,6 +6,12 @@ Keep this file **short and operational**. Progress and narrative live in `IMPLEM
 
 Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in shipped files). Goals and constraints: `specs/design-philosophy-and-constraints.md`.
 
+## Copy: all lowercase
+
+- **All user-visible copy** in `src/**/*.html` is authored in **lowercase**: titles, headings, paragraphs, link text, list labels, `title` / `meta description` / `alt` / `aria-label` / other human-facing attributes.
+- **Do not lowercase** URLs in `href` or `src`, machine `datetime` values, filenames where the server is case-sensitive, or **`viewBox`** on inline SVG (must stay camelCase).
+- After large HTML edits, run from repo root: `.venv/bin/python scripts/lowercase_html_text.py` (install deps via `python3 -m venv .venv && .venv/bin/pip install beautifulsoup4` if needed) so text nodes stay consistent; then confirm SVG icons still use `viewBox`.
+
 ## Implementation plan — before every build
 
 **Do not start a BUILD pass or edit `src/*` until `IMPLEMENTATION_PLAN.md` is current.**

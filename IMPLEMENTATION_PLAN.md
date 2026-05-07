@@ -4,18 +4,18 @@ Prioritized tasks for the static site (`src/`). **IA = praneel**; **visuals = MF
 
 ## Open (highest priority first)
 
-- [ ] **Proofread:** Confirm education dates, GitHub username, and any new project copy; résumé PDF is `src/Anush_Sonone_Resume_2028_Current.pdf`.
+- [ ] **Proofread:** Confirm internship dates, GitHub username, résumé PDF URL.
 - [ ] **Deploy:** Host `src/` and verify routes (`/blog/college-application-journey.html` or configure clean URLs); remote images on the blog post load from anush.wiki.
 
 ## Done
 
-- [x] **About:** Experience removed from markup; single **Résumé (PDF)** link; compact ↗ project lines; skills/coursework stripped; PDF vendored in `src/` for static hosting.
-- [x] **Blog:** Homepage **Blogs** section + **Links** section; full college journey article at `blog/college-application-journey.html` (scraped from anush.wiki `#/writing/college-application-journey`); images hotlinked to anush.wiki with lazy loading.
-- [x] **MFWS reskin:** White canvas, serif, system `LinkText` / `VisitedText` with fallbacks, default `h2`/`h1` sizing, disc lists, `#ccc` footer hairline, praneel layout preserved.
-- [x] **Structure + content:** Praneel-style two-page IA, column width, header/nav/footer slots, about/index pages, contact SVGs, index footer credit line.
-- [x] **Scaffold:** Initial HTML loop (`loop.sh`, prompts, `AGENTS.md`).
-- [x] **Specs:** Split praneel (**structure**) vs MFWS (**surface**); added `visual-language-motherfuckingwebsite.md`; updated constitution + page specs.
-- [x] **Process:** `AGENTS.md` requires reconciling this file before every build; `PROMPT_build.md` phase 0e.
+- [x] **Lowercase copy policy:** All visible HTML text lowercased; `AGENTS.md` documents rules + `scripts/lowercase_html_text.py` helper; `viewBox` preserved on SVG.
+- [x] **Blog:** Homepage **Blogs** + **Links**; `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
+- [x] **MFWS reskin:** White canvas, serif, system link colors + fallbacks, default heading sizes, disc lists, `#ccc` footer hairline.
+- [x] **Structure + content:** Two-page IA, column width, footer credit, résumé/about variants as in `src/`.
+- [x] **Scaffold:** Ralph loop (`loop.sh`, prompts, `AGENTS.md`).
+- [x] **Specs:** Praneel structure vs MFWS surface; constitution + page specs.
+- [x] **Process:** Reconcile this file before every build (`AGENTS.md`, `PROMPT_build.md` 0e).
 
 ## Notes
 
