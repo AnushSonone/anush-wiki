@@ -100,11 +100,12 @@ a:visited {
   margin-bottom: 1.5rem;
 }
 
-/* h1 at default UA weight/size — MFWS hierarchy */
+/* lock site title so it matches across h1 (index/about) and div/p (blog) */
 .site-name {
   margin: 0;
-  font-size: revert;
-  font-weight: revert;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
   text-transform: lowercase;
   cursor: default;
 }
@@ -158,7 +159,15 @@ a:visited {
 }
 
 .post-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: 1rem;
+  align-items: start;
   margin-bottom: 0.5rem;
+}
+
+.post-list li > a {
+  min-width: 0;
 }
 
 .post-list a:focus-visible {
@@ -169,8 +178,9 @@ a:visited {
 .post-list time {
   color: inherit;
   font-size: inherit;
-  margin-left: 0.35rem;
+  margin-left: 0;
   white-space: nowrap;
+  text-align: right;
 }
 
 .site-chrome {
@@ -222,14 +232,6 @@ a:visited {
   margin-bottom: 0;
 }
 
-.blog-article .article-back:first-of-type {
-  margin: 0 0 1.25rem;
-}
-
-.blog-article .article-back:last-of-type:not(:first-of-type) {
-  margin-bottom: 0;
-}
-
 .lead {
   margin: 0 0 1.5rem;
 }
@@ -266,6 +268,19 @@ a:visited {
 
 .project-name {
   font-weight: 700;
+}
+
+.project-body a.project-name:any-link {
+  text-decoration: none;
+}
+
+.project-body a.project-name:hover {
+  text-decoration: underline;
+}
+
+.project-body a.project-name:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .edu-list.edu-list-education > li {
@@ -469,15 +484,6 @@ a:visited {
 }
 
 /* Blog posts (content migrated from anush.wiki; images may be remote) */
-.site-main > .article-back {
-  margin: 1.25rem 0 0;
-}
-
-.site-main > .article-back a:focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
-}
-
 .blog-article {
   max-width: 100%;
 }
