@@ -342,6 +342,11 @@ a:visited {
   color: inherit;
 }
 
+.edu-list a:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
 .coursework {
   margin: 0 0 0.5rem;
   line-height: 1.5;
