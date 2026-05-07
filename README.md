@@ -1,33 +1,33 @@
 # anush.wiki (static site)
 
-Personal site: bio, blog, and contact — shipped as plain **HTML + CSS** under `src/`.
+personal site: bio, blog, and contact — shipped as plain **html + css** under `src/`.
 
-## Why [motherfuckingwebsite.com](https://motherfuckingwebsite.com/)–style design?
+## why [motherfuckingwebsite.com](https://motherfuckingwebsite.com/)–style design?
 
-The original site is a rant; this project only borrows its **technical idea**, not its voice.
+the original site is a rant; this project only borrows its **technical idea**, not its voice.
 
-**Motivation:**
+**motivation:**
 
-- **Content first** — Typography and layout exist so words are easy to read, not so the page can “feel designed.”
-- **Almost nothing to download** — No JavaScript runtime, no framework bundle, no font CDNs. The page loads and renders with minimal moving parts.
-- **Semantics over chrome** — Real headings, landmarks, and links; default system colors where it helps; no fake UI hierarchy built from divs and gray microcopy.
-- **No accidental complexity** — If a dependency doesn’t buy a clear win for readers, it doesn’t ship.
+- **content first** — typography and layout exist so words are easy to read, not so the page can "feel designed."
+- **almost nothing to download** — no javascript runtime, no framework bundle, no font cdns. the page loads and renders with minimal moving parts.
+- **semantics over chrome** — real headings, landmarks, and links; default system colors where it helps; no fake ui hierarchy built from divs and gray microcopy.
+- **no accidental complexity** — if a dependency doesn't buy a clear win for readers, it doesn't ship.
 
-That lines up with *motherfuckingwebsite* as a critique of bloated, script-heavy personal pages — tightened here into a small set of rules in `specs/design-philosophy-and-constraints.md`.
+that lines up with *motherfuckingwebsite* as a critique of bloated, script-heavy personal pages — tightened here into a small set of rules in `specs/design-philosophy-and-constraints.md`.
 
-## Layout
+## layout
 
-- `src/index.html` — Blog list and entry to the site.
-- `src/about.html` — About / résumé-style page.
-- `src/blog/` — Individual posts.
-- `src/styles.css` — Shared styles.
+- `src/index.html` — blog list and entry to the site.
+- `src/about.html` — about / résumé-style page.
+- `src/blog/` — individual posts.
+- `src/styles.css` — shared styles.
 
-## Preview locally
+## preview locally
 
-From the repo root:
+from the repo root:
 
 ```bash
 cd src && python3 -m http.server 8080
 ```
 
-Open `http://127.0.0.1:8080/` in a browser.
+open `http://127.0.0.1:8080/` in a browser.
