@@ -87,9 +87,16 @@ a:visited {
   min-height: 100vh;
 }
 
-/* blog posts: match bottom inset to top (12vh) after long scroll */
+/* long blog posts: avoid min-height + padding scroll quirks; spacer can't collapse */
 .site-main.site-main--blog {
-  padding-bottom: 12vh;
+  min-height: unset;
+  padding-bottom: 2rem;
+}
+
+body.page-blog::after {
+  content: "";
+  display: block;
+  min-height: calc(12vh + env(safe-area-inset-bottom, 0px));
 }
 
 .site-top {
