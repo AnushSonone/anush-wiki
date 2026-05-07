@@ -1,22 +1,28 @@
-/* Minimal, system-first styles — readable, light footprint, no preprocessors. */
+/* praneelseth-style shell — warm base, 600px column, HTML + CSS only */
 
 :root {
   color-scheme: light dark;
-  --text: #111;
-  --bg: #fafafa;
-  --link: #0b57d0;
-  --link-visited: #6b2bbd;
-  --border: #ccc;
-  --focus: #0066cc;
+  --bg: #faf8f4;
+  --text: #000000;
+  --text-secondary: #374151;
+  --text-nav: #4b5563;
+  --text-muted: #9ca3af;
+  --text-soft: #6b7280;
+  --border-subtle: #f3f4f6;
+  --focus: #0b57d0;
+  --link: inherit;
+  --link-visited: inherit;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #e8e8e8;
-    --bg: #121212;
-    --link: #8ab4f8;
-    --link-visited: #c58af9;
-    --border: #444;
+    --bg: #1a1916;
+    --text: #f5f3ef;
+    --text-secondary: #d1d5db;
+    --text-nav: #9ca3af;
+    --text-muted: #9ca3af;
+    --text-soft: #a1a1aa;
+    --border-subtle: #3d3c38;
     --focus: #8ab4f8;
   }
 }
@@ -33,7 +39,6 @@ html {
 
 body {
   margin: 0;
-  padding: 1.25rem clamp(1rem, 4vw, 2rem) 3rem;
   font-family:
     system-ui,
     -apple-system,
@@ -50,89 +55,372 @@ body {
 .skip-link {
   position: absolute;
   left: -9999px;
-  top: 0.5rem;
+  top: 0.75rem;
   padding: 0.35rem 0.6rem;
   background: var(--bg);
-  color: var(--link);
-  border: 1px solid var(--border);
+  color: var(--text-nav);
+  border: 1px solid var(--border-subtle);
   z-index: 10;
+  font-size: 0.875rem;
 }
 
 .skip-link:focus {
-  left: 0.5rem;
+  left: 0.75rem;
 }
 
-.site-header,
-.site-footer {
-  max-width: 40rem;
-}
-
-.site-title {
-  font-size: 1.35rem;
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-}
-
-.site-title a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.site-title a:hover,
-.site-title a:focus-visible {
-  text-decoration: underline;
-}
-
-.site-tagline {
-  margin: 0;
-  color: var(--text);
-  opacity: 0.8;
-}
-
-main {
-  max-width: 40rem;
-  margin-top: 2rem;
-}
-
-h1 {
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
-  line-height: 1.2;
-  margin: 0 0 1rem;
-}
-
-p {
-  margin: 0 0 1rem;
-}
-
-a:link {
-  color: var(--link);
-}
-
-a:visited {
-  color: var(--link-visited);
-}
-
-a:hover {
-  text-decoration-thickness: 0.12em;
-}
-
-a:focus-visible,
 .skip-link:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
-code {
-  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-  font-size: 0.95em;
+.site-main {
+  max-width: 37.5rem;
+  margin: 0 auto;
+  padding: 12vh 1.5rem 4rem;
+  min-height: 100vh;
 }
 
-.site-footer {
+.site-top {
+  margin-bottom: 2rem;
+}
+
+.site-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.site-name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+.site-name a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-name a:hover {
+  text-decoration: underline;
+}
+
+.site-name a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.site-nav a {
+  color: var(--text-nav);
+  text-decoration: none;
+  text-transform: lowercase;
+}
+
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.site-nav a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.intro {
+  font-size: 0.75rem;
+  line-height: 1.625;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+  max-width: 100%;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.section-block {
+  margin-bottom: 1.5rem;
+}
+
+.section-block .list-block {
+  margin-bottom: 2rem;
+}
+
+.posts-section .section-label {
+  margin-bottom: 0.75rem;
+}
+
+.post-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-list li {
+  font-size: 0.875rem;
+  margin-bottom: 0.65rem;
+}
+
+.post-list a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--text-soft);
+  text-underline-offset: 0.18em;
+}
+
+.post-list a:hover,
+.post-list a:focus-visible {
+  text-decoration-color: var(--text);
+}
+
+.post-list a:visited {
+  color: var(--text-secondary);
+}
+
+.post-list time {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-left: 0.35rem;
+  white-space: nowrap;
+}
+
+.site-chrome {
   margin-top: 3rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.site-footer small {
-  opacity: 0.85;
+.site-chrome a {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.site-chrome a:hover,
+.site-chrome a:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.site-chrome a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* About page */
+.lead {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem;
+  line-height: 1.625;
+}
+
+.edu-list,
+.plain-list {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.edu-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.edu-primary {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.edu-detail {
+  color: var(--text-soft);
+  font-weight: 400;
+}
+
+.edu-dates {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.coursework {
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.coursework strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ex-role {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+  font-weight: 400;
+}
+
+.experience-block,
+.project-block {
+  margin-bottom: 1.5rem;
+}
+
+.experience-head,
+.project-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.4rem;
+}
+
+.ex-title {
+  font-weight: 500;
+}
+
+.ex-meta {
+  color: var(--text-soft);
+  font-weight: 400;
+}
+
+.ex-dates {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+@media (min-width: 36rem) {
+  .experience-head {
+    flex-wrap: nowrap;
+  }
+
+  .ex-dates {
+    width: auto;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    margin-left: auto;
+    text-align: right;
+  }
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.detail-list li {
+  margin-bottom: 0.35rem;
+}
+
+.tech-line {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 0.4rem;
+}
+
+.achievement-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.achievement-list li {
+  margin-bottom: 0.35rem;
+}
+
+.skills-block {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.skills-block p {
+  margin: 0 0 0.5rem;
+}
+
+.skills-block strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.contact-row a.mail {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.contact-row a.mail:hover,
+.contact-row a.mail:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.contact-row a.icon-link {
+  color: var(--text-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.contact-row a.icon-link:hover,
+.contact-row a.icon-link:focus-visible {
+  color: var(--text);
+}
+
+.contact-row a.icon-link:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.contact-row svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
