@@ -58,7 +58,7 @@ a:visited {
 
 a:link,
 a:visited {
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .skip-link {
@@ -114,7 +114,7 @@ a:visited {
 }
 
 .site-name a:hover {
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .site-name a:focus-visible {
@@ -214,7 +214,7 @@ a:visited {
 }
 
 .site-chrome-credit a:any-link {
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .site-chrome-credit a:focus-visible {
@@ -413,6 +413,15 @@ a:visited {
 }
 
 /* Blog posts (content migrated from anush.wiki; images may be remote) */
+.site-main > .article-back {
+  margin: 1.25rem 0 0;
+}
+
+.site-main > .article-back a:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
 .blog-article {
   max-width: 100%;
 }
