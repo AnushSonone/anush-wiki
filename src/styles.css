@@ -260,6 +260,49 @@ a:visited {
   font-weight: 700;
 }
 
+.edu-list.edu-list-education > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.25rem;
+  row-gap: 0.35rem;
+  align-items: start;
+}
+
+.edu-list.edu-list-education .edu-blurb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.edu-list.edu-list-education .edu-school {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.edu-list.edu-list-education .edu-subline {
+  display: block;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.edu-list.edu-list-education .edu-dates {
+  margin: 0;
+  font: inherit;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+@media (max-width: 28rem) {
+  .edu-list.edu-list-education > li {
+    grid-template-columns: 1fr;
+  }
+
+  .edu-list.edu-list-education .edu-dates {
+    white-space: normal;
+  }
+}
+
 .edu-list,
 .plain-list {
   margin: 0 0 1rem;
