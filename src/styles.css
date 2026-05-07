@@ -87,6 +87,11 @@ a:visited {
   min-height: 100vh;
 }
 
+/* blog posts: match bottom inset to top (12vh) after long scroll */
+.site-main.site-main--blog {
+  padding-bottom: 12vh;
+}
+
 .site-top {
   margin-bottom: 2rem;
 }
