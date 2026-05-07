@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Ralph-style outer loop: feed a fixed prompt file to a headless agent CLI, repeatedly.
-# Each iteration should complete one IMPLEMENTATION_PLAN task, commit, and exit so the next
-# iteration starts with a fresh context window.
+# Each iteration should complete one IMPLEMENTATION_PLAN task and exit so the next
+# iteration starts with a fresh context window. Project policy (see AGENTS.md): agents
+# in Cursor must not commit until the user says so; headless runs may still follow
+# PROMPT_build.md if your CLI workflow includes an explicit commit step you control.
 #
 # Usage:
 #   ./loop.sh              # build mode, unlimited iterations

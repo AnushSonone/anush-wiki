@@ -6,6 +6,12 @@ Keep this file **short and operational**. Progress and narrative live in `IMPLEM
 
 Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in shipped files). Goals and constraints: `specs/design-philosophy-and-constraints.md`.
 
+## Git: no commits or pushes without explicit approval
+
+- **Do not** run `git commit` or `git push` unless the user **explicitly** asks you to (e.g. “commit”, “push”, “ship it”, “save to git”).
+- You may still use read-only git commands (`status`, `diff`, `log`) anytime.
+- When work is done and the user has **not** asked to commit, stop with a short summary and what they could commit; leave the working tree **uncommitted** until they say so.
+
 ## Copy: all lowercase
 
 - **All user-visible copy** in `src/**/*.html` is authored in **lowercase**: titles, headings, paragraphs, link text, list labels, `title` / `meta description` / `alt` / `aria-label` / other human-facing attributes.
@@ -17,7 +23,7 @@ Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in
 
 1. **Reconcile first:** Compare `IMPLEMENTATION_PLAN.md` to `specs/*` and the actual state of `src/*`. Fix the plan if **Open** / **Done** is wrong, tasks are missing, or priorities are stale (add, edit, reorder, or close items).
 2. **Then implement:** Pick the top **Open** task and execute it.
-3. **After the increment:** Update the plan again—mark work complete, note follow-ups or blockers—before committing (same as Ralph BUILD steps).
+3. **After the increment:** Update the plan again—mark work complete, note follow-ups or blockers—**when the user asks you to commit**, include that update in the same commit if it changed (same as Ralph BUILD steps, but commit only on request).
 
 Plan-only refreshes belong in **plan mode** (`./loop.sh plan` or `PROMPT_plan.md`); still **read** the plan before building even when you are not running the shell loop.
 
@@ -33,7 +39,7 @@ Open `http://127.0.0.1:8080/` (serves `index.html` by default).
 
 ## Validation (backpressure)
 
-Run before each commit:
+Run before any commit the user requested (or when handing off so they can commit locally):
 
 1. **Manual smoke:** load the site in a browser; tab through links and headings; confirm focus is visible and content order makes sense.
 
@@ -55,9 +61,9 @@ No automated test runner is required; add optional tools in this section if you 
 
 ## Git conventions
 
-- One logical task per Ralph iteration; commit when validation passes.
+- One logical task per Ralph iteration; **commit only after the user explicitly asks** and validation passes.
 - Commit messages: imperative mood, state what changed and why it matters.
-- Do **not** enable `RALPH_AUTO_PUSH` in `loop.sh` until a remote is configured and you want pushes every iteration.
+- Do **not** enable `RALPH_AUTO_PUSH` in `loop.sh` until a remote is configured; even then, project default is **no push** unless the user wants automated pushes.
 
 ## Ralph loop
 
@@ -65,7 +71,7 @@ No automated test runner is required; add optional tools in this section if you 
 2. **Plan:** `./loop.sh plan` — updates `IMPLEMENTATION_PLAN.md` only (per `PROMPT_plan.md`).
 3. **Build:** `./loop.sh` — implements one task per invocation (per `PROMPT_build.md`).
 
-If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.md` or `PROMPT_build.md` and follow the same phases.
+If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.md` or `PROMPT_build.md` and follow the same phases. **Commits:** headless loop prompts may still describe a commit step; in Cursor chat, follow **Git: no commits or pushes without explicit approval** above unless the human asks to commit.
 
 ## Codebase patterns
 

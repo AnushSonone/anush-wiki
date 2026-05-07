@@ -22,15 +22,15 @@
 
 2. Implement that item in `src/*` (and `specs/*` only if fixing a spec typo or contradiction). Keep changes minimal and consistent with existing patterns.
 
-3. Run **all validation steps** listed in `AGENTS.md` that apply to your change. Fix failures before committing.
+3. Run **all validation steps** listed in `AGENTS.md` that apply to your change. Fix failures before you or the user commits.
 
 4. Update `IMPLEMENTATION_PLAN.md`: mark the task done, add brief notes on follow-ups or bugs discovered.
 
 5. If you learned something operational (commands, paths, gotchas), append a **short** note to `AGENTS.md`. Do not turn `AGENTS.md` into a progress diary — status belongs in `IMPLEMENTATION_PLAN.md`.
 
-6. `git add -A` and `git commit` with a message that states **what** changed and **why** (implementation importance).
+6. **Do not** run `git commit` or `git push` unless the user explicitly asks (see `AGENTS.md` → **Git: no commits or pushes without explicit approval**). If they have not asked, end with a summary and a suggested commit message; leave changes unstaged or staged only if they requested staging.
 
-7. Stop after one coherent task + passing validation + commit. Exit so the outer loop can start fresh.
+7. Stop after one coherent task + passing validation (and a commit **only** if the user asked for one). Exit so the outer loop can start fresh.
 
 ---
 
@@ -46,7 +46,7 @@
 
 999. When documentation or comments explain a non-obvious choice, capture **why** — future loops depend on it.
 
-9999. If `IMPLEMENTATION_PLAN.md` is noisy with done items, trim completed bullets in a separate small commit or as part of your turn if appropriate.
+9999. If `IMPLEMENTATION_PLAN.md` is noisy with done items, trim completed bullets **in a commit only when the user asks to commit**, or leave a note for them to do it locally.
 
 99999. If specs contradict each other, fix specs with **minimal** edits or add a planning note in `IMPLEMENTATION_PLAN.md` — do not silently pick one.
 

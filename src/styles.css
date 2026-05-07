@@ -166,8 +166,8 @@ body.page-blog::after {
 
 .post-list {
   margin: 0 0 1rem;
-  padding-left: 1.5rem;
-  list-style: disc;
+  padding-left: 0;
+  list-style: none;
 }
 
 .post-list li {
@@ -262,19 +262,11 @@ body.page-blog::after {
 }
 
 .project-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.35rem;
   margin: 0 0 0.85rem;
 }
 
-.project-wedge {
-  flex-shrink: 0;
-  line-height: inherit;
-}
-
 .project-body {
-  flex: 1;
+  display: block;
   min-width: 0;
 }
 
@@ -498,10 +490,25 @@ body.page-blog::after {
 /* Blog posts (content migrated from anush.wiki; images may be remote) */
 .blog-article {
   max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* align post title with about-page section headings (projects / achievements), not inset */
+.blog-article > h1:first-of-type {
+  margin: 0 0 0.75rem;
+  margin-inline: 0;
+  padding: 0;
+  padding-inline: 0;
+  text-indent: 0;
 }
 
 .blog-article .article-meta {
   margin: 0 0 1.5rem;
+  margin-inline: 0;
+  padding: 0;
+  padding-inline: 0;
+  text-indent: 0;
 }
 
 .blog-article img {
