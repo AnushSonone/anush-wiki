@@ -1,0 +1,59 @@
+# AGENTS — operational context for Ralph loops
+
+Keep this file **short and operational**. Progress and narrative live in `IMPLEMENTATION_PLAN.md`.
+
+## Project
+
+Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in shipped files). Goals and constraints: `specs/design-philosophy-and-constraints.md`.
+
+## Preview locally
+
+From repository root:
+
+```bash
+cd src && python3 -m http.server 8080
+```
+
+Open `http://127.0.0.1:8080/` (serves `index.html` by default).
+
+## Validation (backpressure)
+
+Run before each commit:
+
+1. **Manual smoke:** load the site in a browser; tab through links and headings; confirm focus is visible and content order makes sense.
+
+2. **Payload sanity** (approximate, from repo root):
+
+   ```bash
+   wc -c src/index.html src/styles.css
+   ```
+
+   Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
+
+3. **Semantics / a11y quick checks:**
+   - One `h1` in the document (unless a spec defines a deliberate exception).
+   - Landmarks: `header`, `main`, `footer` present where applicable.
+   - Every `a href` has meaningful link text (no “click here” alone).
+   - Images (if any later) have appropriate `alt` text per spec.
+
+No automated test runner is required; add optional tools in this section if you introduce them.
+
+## Git conventions
+
+- One logical task per Ralph iteration; commit when validation passes.
+- Commit messages: imperative mood, state what changed and why it matters.
+- Do **not** enable `RALPH_AUTO_PUSH` in `loop.sh` until a remote is configured and you want pushes every iteration.
+
+## Ralph loop
+
+1. Set `RALPH_FEED_CMD` to your headless agent command (must read the prompt from stdin). See comments in `loop.sh`.
+2. **Plan:** `./loop.sh plan` — updates `IMPLEMENTATION_PLAN.md` only (per `PROMPT_plan.md`).
+3. **Build:** `./loop.sh` — implements one task per invocation (per `PROMPT_build.md`).
+
+If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.md` or `PROMPT_build.md` and follow the same phases.
+
+## Codebase patterns
+
+- `src/index.html` — single page entry.
+- `src/styles.css` — single global stylesheet linked from `index.html`.
+- Additional pages or assets only when `specs/*` call for them.
