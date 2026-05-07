@@ -226,6 +226,40 @@ a:visited {
   margin: 0 0 1.5rem;
 }
 
+.resume-link {
+  margin: 0 0 1.5rem;
+}
+
+.edu-list.list-plain-rows {
+  list-style: none;
+  padding-left: 0;
+}
+
+.project-compact {
+  line-height: 1.55;
+}
+
+.project-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+}
+
+.project-wedge {
+  flex-shrink: 0;
+  line-height: inherit;
+}
+
+.project-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-name {
+  font-weight: 700;
+}
+
 .edu-list,
 .plain-list {
   margin: 0 0 1rem;
