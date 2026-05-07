@@ -35,10 +35,10 @@ Run before each commit:
 2. **Payload sanity** (approximate, from repo root):
 
    ```bash
-   wc -c src/index.html src/about.html src/styles.css
+   wc -c src/index.html src/about.html src/styles.css src/blog/college-application-journey.html
    ```
 
-   If `about.html` does not exist yet, omit it. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
+   If `about.html` or blog pages do not exist yet, omit those paths. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
 
 3. **Semantics / a11y quick checks:**
    - One `h1` in the document (unless a spec defines a deliberate exception).
@@ -64,7 +64,7 @@ If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.m
 
 ## Codebase patterns
 
-- `src/index.html` — home / blog index.
+- `src/index.html` — home.
 - `src/about.html` — résumé-style about page (per `specs/page-about.md`).
-- `src/styles.css` — single global stylesheet linked from every HTML page.
-- Additional pages or assets only when `specs/*` call for them.
+- `src/blog/*.html` — long-form posts (e.g. `college-application-journey.html`).
+- `src/styles.css` — single global stylesheet linked from every HTML page (blog pages use `../styles.css`).

@@ -377,3 +377,27 @@ a:visited {
   height: 16px;
   display: block;
 }
+
+/* Blog posts (content migrated from anush.wiki; images may be remote) */
+.blog-article {
+  max-width: 100%;
+}
+
+.blog-article .article-back {
+  margin: 0 0 1.25rem;
+}
+
+.blog-article .article-meta {
+  margin: 0 0 1.5rem;
+}
+
+.blog-article img {
+  max-width: 100%;
+  height: auto;
+}
+
+.blog-article blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--ink);
+}
