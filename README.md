@@ -2,18 +2,16 @@
 
 personal site: bio, blog, and contact — shipped as plain **html + css** under `src/`.
 
-## why [motherfuckingwebsite.com](https://motherfuckingwebsite.com/)–style design?
+## design
 
-the original site is a rant; this project only borrows its **technical idea**, not its voice.
+the site is **html + css** with a **content-first** bias: readable type, semantic structure, and almost nothing to download—no js, no frameworks, no font cdns. that approach draws on the same school of thought as [motherfuckingwebsite.com](https://motherfuckingwebsite.com/), applied here as a small rule set in `specs/design-philosophy-and-constraints.md`.
 
-**motivation:**
+**principles:**
 
-- **content first** — typography and layout exist so words are easy to read, not so the page can "feel designed."
-- **almost nothing to download** — no javascript runtime, no framework bundle, no font cdns. the page loads and renders with minimal moving parts.
-- **semantics over chrome** — real headings, landmarks, and links; default system colors where it helps; no fake ui hierarchy built from divs and gray microcopy.
-- **no accidental complexity** — if a dependency doesn't buy a clear win for readers, it doesn't ship.
-
-that lines up with *motherfuckingwebsite* as a critique of bloated, script-heavy personal pages — tightened here into a small set of rules in `specs/design-philosophy-and-constraints.md`.
+- **content first** — typography and layout serve the text, not decoration.
+- **almost nothing to download** — pages load and render without a javascript runtime or third-party bundles.
+- **semantics over chrome** — real headings, landmarks, and links; system colors where useful; no fake hierarchy from gray microcopy.
+- **no accidental complexity** — dependencies only ship when they clearly help readers.
 
 ## layout
 
