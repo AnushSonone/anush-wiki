@@ -226,12 +226,36 @@ body {
   text-decoration: underline;
 }
 
-.site-chrome a:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+.site-chrome a:first-child {
+  flex-shrink: 0;
 }
 
-/* About page */
+.site-chrome-credit {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: right;
+  max-width: 22rem;
+}
+
+.site-chrome-credit a {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--text-soft);
+  text-underline-offset: 0.15em;
+}
+
+.site-chrome-credit a:hover,
+.site-chrome-credit a:focus-visible {
+  color: var(--text);
+  text-decoration-color: var(--text);
+}
+
+.site-chrome-credit a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
 .lead {
   font-size: 0.875rem;
   color: var(--text-secondary);
