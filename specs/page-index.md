@@ -1,51 +1,41 @@
 # Page: index (blog / home)
 
 **Topic:** `/` equivalent — `src/index.html`.  
-**Depends on:** [layout-and-style.md](./layout-and-style.md).
+**Depends on:** [layout-and-style.md](./layout-and-style.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
 ## Purpose
 
-Personal landing that foregrounds **writing**: name, navigation, short intro, **reverse-chronological or priority-ordered list of posts**, and bottom chrome.
+Personal landing that foregrounds **writing / links**: name, navigation, short intro, ordered list of entries, and bottom chrome—**structurally** like praneel; **visually** like MFWS.
 
 ## Document title and meta
 
-- `<title>`: `{Display name}` (match visible site name).
-- `<meta name="description">`: one short line (reference: “My blog and projects”).
+- `<title>`: author’s display preference (may be lowercase to match praneel habit).
+- `<meta name="description">`: one short line.
 
 ## Semantics
 
-- One **`<h1 class="visuallyhidden">` or equivalent** is **not** the reference pattern (reference has no prominent h1 on home). For accessibility, include **exactly one logical `h1`**—recommended: **`h1` = site name** or **`h1` = “Writing” / “Blog”** with name in header. Pick one pattern and keep heading order sane; **document the choice in markup comments**.  
-- **Recommended:** `h1` contains the **same text as the visible site name** in the header row (screen reader parity).
+- **Exactly one `h1`** per page. **Recommended:** `h1` is the **site name** in the header row (matches MFWS habit of a clear top-level heading). The “posts” block uses **`h2`** next.
+- Alternatively, if the name is not an `h1`, include **one** `h1` elsewhere early in `<main>` and document in a comment—do not orphan heading levels.
 
 ## Header row
 
-- Left: site name linking to `/` (or `index.html`).
-- Right **`<nav aria-label="Primary">`** with at minimum:
-  - **`About` → `about.html`** (relative link).
+- Left: site name linking to `index.html`.
+- Right **`<nav aria-label="Primary">`** with at minimum **`about` → `about.html`** (relative). Styling = **MFWS** (serif, system links)—see visual spec.
 
 ## Intro
 
-Single paragraph (reference tone: points visitors to posts). Content is **author-specific**; placeholder OK until content spec is filled.
+- Single **`<p>`** (optional class for layout-only hooks). **No** forced small gray type: body text is **black serif** at default size per MFWS.
 
-Example structure:
+## Post / links list
 
-```html
-<p class="intro">…</p>
-```
-
-## Post list
-
-- Wrapped in **`<section aria-labelledby="posts-heading">`** with **`h2 id="posts-heading"`** visually styled like normal list title or slightly subtle—**must not** skip heading levels after `h1`.
-- List: **`<ul>`** of posts. Each **`<li>`** contains a **link**:
-  - Post title as link text (meaningful).
-  - Optional **`<time datetime="…">`** for machine-readable date; optional muted date snippet.
-- Order: newest first unless author specifies otherwise.
-- No “loading” placeholder text in shipped HTML.
+- **`<section aria-labelledby="posts-heading">`** with **`h2 id="posts-heading"`** — heading text such as “Links & writing” or “Posts” in **normal title / sentence case**, **not** uppercase label styling.
+- **`<ul>`** of entries; **prefer visible bullets** per MFWS unless a narrow exception is documented.
+- Each **`<li>`** includes a **meaningful link**; optional **`<time datetime>`** and human date—**dates use the same ink as body text**, not muted gray.
 
 ## Site footer chrome
 
-- As per [layout-and-style.md](./layout-and-style.md): outbound **left** link (reference: `utexas.network`). Replace with author’s affiliate/project link **or** remove if not applicable—in which case keep layout with a single muted line or second link; **do not** leave `href="#"` placeholders.
+- Structural two-slot row per [layout-and-style.md](./layout-and-style.md). Links use **system link colors**; attribution text is **body copy** (black), not gray “legalese” tone via color.
 
 ## Content source
 
-- Post titles, URLs, and dates must come from the author. Until provided, use **two harmless example entries** clearly marked in HTML comments as placeholders.
+- URLs and titles come from the author. Placeholders must be clearly marked in HTML comments until replaced.

@@ -6,12 +6,14 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 - **HTML + CSS only** for what visitors download. No JavaScript, no WebAssembly, no framework runtime.
 - **No third-party embeds** (analytics, chat widgets, tag managers, ad scripts, social SDKs) unless a future spec explicitly names an exception and justifies payload impact.
-- **No web font CDN** and no bundled `@font-face` unless a future spec explicitly allows it. Default: **system font stack** for zero blocking bytes and native readability.
+- **No web font CDN** and no bundled `@font-face` unless a future spec explicitly allows it. Default: **serif** stack only (see visual language spec)—not sans/system-ui for primary copy.
 - **Inline SVG** is allowed inside HTML for small monochrome icons (e.g. social links) when given accessible names via the enclosing `<a>`; no SVG sprite CDNs.
+- **Serif-first reading** and **white canvas** per [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md)—no warmed boutique backgrounds or gray “UI typography” for body/nav.
 
-## Visual clone alignment
+## IA vs visual (merged project)
 
-- Topic specs under `specs/layout-and-style.md`, `specs/page-index.md`, and `specs/page-about.md` describe a **praneelseth.com-style** shell (warm off-white page, 600px column). That palette and spacing are intentional; they do not violate the “minimal payload” rule if CSS stays lean.
+- **Praneelseth.com** supplies **structure only**: two-page IA, 600px column, header/nav placement, section order ([reference-analysis-praneelseth.md](./reference-analysis-praneelseth.md), [layout-and-style.md](./layout-and-style.md)).
+- **[motherfuckingwebsite.com](https://motherfuckingwebsite.com/)** supplies **look**: black on white, serif, system link colors, default heading hierarchy ([visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md)).
 
 ## Performance and weight
 
@@ -23,7 +25,7 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 - Use **HTML5 semantic elements** (`header`, `main`, `footer`, `section`, `nav`, `article`, `ul`/`ol` as appropriate).
 - Exactly **one `h1`** per page unless a spec documents multi-page structure.
-- Do not skip heading levels for styling convenience; use CSS to adjust visual weight.
+- Do not skip heading levels for styling convenience; **heading levels carry meaning**—avoid shrinking `h2` into “label” territory with CSS; prefer MFWS default heading sizes per [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 - **Meaningful link text**; avoid bare URLs as link labels when readability suffers.
 
 ## Accessibility
@@ -36,7 +38,7 @@ This spec is the **constitution** for the personal landing page. It translates t
 ## Visual design
 
 - **Minimal chrome:** no decorative animation required; no hover gimmicks that add weight or obscure content.
-- **Responsive** layout MUST work from small phone to desktop-width viewports using simple CSS (fluid type, max-width on main column, respectful spacing). No dependency on heavyweight grid frameworks.
+- **Responsive** layout MUST work from small phone to desktop-width viewports using simple CSS (max-width column, padding only—**no** custom fluid type scale unless amended). No dependency on heavyweight grid frameworks.
 
 ## Content scope
 
