@@ -4,12 +4,12 @@ Prioritized tasks for the static site (`src/`). **IA = praneel**; **visuals = MF
 
 ## Open (highest priority first)
 
-- [ ] **MFWS reskin:** Refactor `src/styles.css` + HTML classes to match updated specs: white `#fff` canvas, **serif** body, system **`LinkText` / `VisitedText`** for links, default heading sizes, remove gray-token UI and `#faf8f4`; optional **visible** list bullets.
 - [ ] **Proofread:** Confirm internship dates, GitHub username, résumé PDF URL; add real blog post links to `index.html` when you publish them.
 - [ ] **Deploy:** Host `src/` and verify relative links from production URL.
 
 ## Done
 
+- [x] **MFWS reskin:** White canvas, serif, system `LinkText` / `VisitedText` with fallbacks, default `h2`/`h1` sizing, disc lists, `#ccc` footer hairline, praneel layout preserved.
 - [x] **Structure + content:** Praneel-style two-page IA, column width, header/nav/footer slots, full résumé copy, contact SVGs, index footer credit line.
 - [x] **Scaffold:** Initial HTML loop (`loop.sh`, prompts, `AGENTS.md`).
 - [x] **Specs:** Split praneel (**structure**) vs MFWS (**surface**); added `visual-language-motherfuckingwebsite.md`; updated constitution + page specs.
