@@ -9,8 +9,8 @@ Prioritized tasks for the static site (`src/`). **IA = praneel**; **visuals = MF
 
 ## Done
 
-- [x] **Lowercase copy policy:** All visible HTML text lowercased per `AGENTS.md`; `viewBox` preserved on SVG.
-- [x] **Blog:** Homepage **Blogs** + **Links**; `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
+- [x] **Lowercase copy policy:** All visible HTML text lowercased; `AGENTS.md` documents rules + `scripts/lowercase_html_text.py` helper; `viewBox` preserved on SVG.
+- [x] **Blog:** Homepage **Blogs** section; `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
 - [x] **MFWS reskin:** White canvas, serif, system link colors + fallbacks, default heading sizes, disc lists, `#ccc` footer hairline.
 - [x] **Structure + content:** Two-page IA, column width, footer credit, résumé/about variants as in `src/`.
 - [x] **Scaffold:** Ralph loop (`loop.sh`, prompts, `AGENTS.md`).
