@@ -7,10 +7,15 @@ This spec is the **constitution** for the personal landing page. It translates t
 - **HTML + CSS only** for what visitors download. No JavaScript, no WebAssembly, no framework runtime.
 - **No third-party embeds** (analytics, chat widgets, tag managers, ad scripts, social SDKs) unless a future spec explicitly names an exception and justifies payload impact.
 - **No web font CDN** and no bundled `@font-face` unless a future spec explicitly allows it. Default: **system font stack** for zero blocking bytes and native readability.
+- **Inline SVG** is allowed inside HTML for small monochrome icons (e.g. social links) when given accessible names via the enclosing `<a>`; no SVG sprite CDNs.
+
+## Visual clone alignment
+
+- Topic specs under `specs/layout-and-style.md`, `specs/page-index.md`, and `specs/page-about.md` describe a **praneelseth.com-style** shell (warm off-white page, 600px column). That palette and spacing are intentional; they do not violate the “minimal payload” rule if CSS stays lean.
 
 ## Performance and weight
 
-- **Combined** byte size of `src/index.html` + `src/styles.css` (excluding optional local images not yet defined) SHOULD stay **under ~35 KiB** uncompressed as a soft budget. If content grows beyond, update this spec with a new ceiling and reason.
+- **Combined** byte size of `src/index.html` + `src/about.html` + `src/styles.css` (excluding optional local images not yet defined) SHOULD stay **under ~35 KiB** uncompressed as a soft budget. If content grows beyond, update this spec with a new ceiling and reason.
 - **No render-blocking** resources other than the single stylesheet linked from HTML.
 - Prefer a **single CSS file** unless a later spec splits concerns for maintenance.
 

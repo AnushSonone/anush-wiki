@@ -25,10 +25,10 @@ Run before each commit:
 2. **Payload sanity** (approximate, from repo root):
 
    ```bash
-   wc -c src/index.html src/styles.css
+   wc -c src/index.html src/about.html src/styles.css
    ```
 
-   Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
+   If `about.html` does not exist yet, omit it. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
 
 3. **Semantics / a11y quick checks:**
    - One `h1` in the document (unless a spec defines a deliberate exception).
@@ -54,6 +54,7 @@ If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.m
 
 ## Codebase patterns
 
-- `src/index.html` — single page entry.
-- `src/styles.css` — single global stylesheet linked from `index.html`.
+- `src/index.html` — home / blog index.
+- `src/about.html` — résumé-style about page (per `specs/page-about.md`).
+- `src/styles.css` — single global stylesheet linked from every HTML page.
 - Additional pages or assets only when `specs/*` call for them.
