@@ -5,7 +5,7 @@
   fetch('/api/chat', { method: 'GET', credentials: 'same-origin' }).catch(() => {});
 
   const STORAGE_KEY = 'wiki-assistant-history-v2';
-  const GREETING = "what's up man! nice to see you here :)";
+  const GREETING = "hey! nice to see you here :)";
 
   const msgs = [];
 
@@ -154,6 +154,21 @@
     });
   }
 
+  function scrollLogToEnd() {
+    requestAnimationFrame(() => {
+      log.scrollTop = log.scrollHeight;
+      requestAnimationFrame(() => {
+        log.scrollTop = log.scrollHeight;
+        const lastTurn = log.querySelector(
+          '.wiki-assistant__turn:last-of-type',
+        );
+        if (lastTurn) {
+          lastTurn.scrollIntoView({ block: 'end', behavior: 'auto' });
+        }
+      });
+    });
+  }
+
   function rerenderTranscript() {
     log.hidden = msgs.length === 0;
     log.innerHTML = '';
@@ -171,7 +186,7 @@
       line.append(label, document.createElement('br'), body);
       log.appendChild(line);
     });
-    log.scrollTop = log.scrollHeight;
+    scrollLogToEnd();
   }
 
   rerenderTranscript();
@@ -189,6 +204,7 @@
 
     if (willOpen) {
       inputEl.focus({ preventScroll: true });
+      scrollLogToEnd();
       return;
     }
 
@@ -220,6 +236,7 @@
     sendBtn.disabled = true;
     status.hidden = false;
     status.textContent = 'thinking…';
+    scrollLogToEnd();
 
     try {
       const res = await fetch('/api/chat', {

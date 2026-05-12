@@ -18,6 +18,9 @@ import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
+/** Cap per completion — avoids runaway cost; raise in code (and note in spec) if needed. */
+const ASSISTANT_MAX_OUTPUT_TOKENS = 2048;
+
 const bodySchema = z.object({
   messages: z
     .array(
@@ -53,7 +56,7 @@ async function geminiViaGoogleSdk(
     model: modelId,
     systemInstruction: systemWithContext,
     generationConfig: {
-      maxOutputTokens: 512,
+      maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
       temperature: 0.6,
     },
   });
@@ -67,6 +70,11 @@ async function geminiViaGoogleSdk(
     role: m.role === 'user' ? ('user' as const) : ('model' as const),
     parts: [{ text: m.content }],
   }));
+
+  /** Gemini requires `history` to begin with role `user`; client may open with assistant-only greeting. */
+  while (history.length > 0 && history[0].role === 'model') {
+    history.shift();
+  }
 
   const chat = model.startChat({ history });
   const result = await chat.sendMessage(last.content);
@@ -276,7 +284,7 @@ export async function POST(req: Request) {
         model: openaiModel as unknown as LanguageModel,
         system: systemWithContext,
         messages: safeTurns,
-        maxOutputTokens: 512,
+        maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
         temperature: 0.6,
         maxRetries: 1,
       });
