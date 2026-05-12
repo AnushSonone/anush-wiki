@@ -85,6 +85,8 @@
 
   const inputEl = document.createElement('input');
   inputEl.type = 'text';
+  inputEl.id = 'wiki-assistant-message';
+  inputEl.name = 'wiki-assistant-message';
   inputEl.className = 'wiki-assistant__input';
   inputEl.placeholder = 'type here!';
   inputEl.setAttribute(
