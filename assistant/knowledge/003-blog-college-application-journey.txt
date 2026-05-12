@@ -1,0 +1,170 @@
+preface: applications are largely a lottery.
+if you haven't had the chance to yet, i highly recommend you watch the
+video
+the problem with applying to college
+by quinn henry. it's a thorough review of the entire application process
+& its inherent flaws. sadly, for the vast majority of cs applicants
+getting into a t10 is almost a lottery. but that doesn't mean we shouldn't
+try. :)
+the schools i applied to & my stats
+all in all, i applied to 18 total schools—2 safeties and 16 reaches. i was
+rejected from 11 of them and waitlisted from 3.
+here are the schools i applied to and their decisions:
+i applied with the following stats: rank 4 of 743, a 35 act (equivalent to
+a 1560-1590 sat), and a 4.5 weighted gpa.
+nowadays, these are very average stats for a cs applicant. most
+competitive applicants will be from the top 5% of their class with a
+33+/1500+, and none of these metrics will singlehandedly get you into a
+top 10 cs school.
+admitium
+phrases it perfectly:
+"stats matter less than you think but more than you want them
+to."
+(check out his masterclass- it's seriously some of the best admissions
+info out there for $200.)
+ultimately, i like to think that such stats only qualify you to be
+considered as a candidate; anything after that is essentially luck of the
+draw. essays, extracurriculars, legacy connections, ethnicity, etc.—there
+are a million different factors that can influence your decision.
+knowing this (and knowing that i'd be getting no preferential treatment
+based off my background), my strategy was to be as bold as possible with my
+essays. whether or not this was successful, i'm not sure myself—i still
+have no clue what pushed my application over the edge. keep reading to
+take a look at the essays that worked for me. :)
+computer science's competitiveness
+take a look at the following graph of utcs's declining acceptance rate over the years:
+it wouldn't be a stretch to assume that in 2024, there may have been
+anywhere between 12,000-15,000 applicants for around 600 seats. given
+these estimations, the acceptance rate falls between 3-5%.
+utcs's
+turing program
+is
+even harder to get into. out of the 500-600 admitted students, only 50 are
+offered a spot in turing honors. i was first deferred then rejected from
+turing.
+from
+texadmissions.com
+:
+"a turing admitted student reported that in their welcome orientation
+session, turing staff said they admitted only 14 out of 80 valedictorians
+(82% denied)."
+however, given that ut austin is ranked #7 in cs, it's reasonable to expect
+such competitiveness in comparison to other schools. georgia tech has a
+~10% acceptance rate for out of state cs students. the university of
+michigan, uiuc, harvard (somehow?), and other schools on par with ut austin
+have similar acceptance rates in the sub-10% region.
+in general, most of the top 20 cs schools have incredibly low acceptance
+rates—hence why it's necessary to apply to almost all of them. once your
+application reaches a certain threshold, it's all down to luck.
+applying to as many schools as possible will increase the odds that
+you'll end up somewhere stellar.
+my application: the personal essay
+throughout high school, i was always focused on what was immediately ahead
+of me—never on college. i didn't start thinking of applying until my junior
+year summer itself, which in hindsight pushed the burden of having to
+figure out everything at once on that summer itself.
+i began with my first draft of my personal essay back in august. it took a
+long
+time to even decide what i wanted to write about—as
+is with most students. after many drafts, i finally decided to write about
+hygge
+: a norwegian term that most closely correlates to the idea of
+comfort.
+i decided to write about this because... it was the first book on my
+nightstand. no, seriously—check out
+the little book of hygge
+. it's a book that explores this concept when it comes to cultivating
+proper lighting, relationships, and emotions to reach an optimal state of
+happiness/comfort.
+here's one of the first excerpts i wrote back in september:
+texas doesn't have terraces. standing behind my apartment rooftop's
+two-foot-tall ledge, i look into the honking traffic of the nighttime
+rush hour and listen to street dogs bark at the schoolboys who only
+want to make it back home on their family's scooty— this is the
+bangalore i miss most. sitting on the ledge, i'm met with a familiar
+aura. it's quiet, yet comforting; it'll sit with me, making sure that
+i'm kept warm tonight. we dig our palms into the concrete, watching the
+bright tech office lights shut off one by one.
+over the next few months, i continued to refine the essay and completely
+rewrite it a few times over, spending a lot more time than i should have
+over nitpicky details and implied meanings. in the end, i panickedly
+rewrote it one last time the night before the ut essays were due and once
+more before cmu.
+disclaimer: don't do that.
+have your essay locked and
+ready within a 2 to 3 months after the commonapp opens—hitting yourself
+over the head with it again and again will oftentimes only lead to a more
+convoluted essay that's void of your greatest ideas.
+again, i cannot recommend
+admitium
+enough. his masterclass will take you through everything you need to know
+about the commonapp and writing process.
+my application: supplemental essays
+oh, these were difficult.
+i'll go ahead and list ut's 2024 supplemental essay prompts below. try to
+brainstorm what you'd say to each.
+1. why are you interested in the major you indicated as your first-choice major?
+2. describe how your experiences, perspectives, talents, and/or your involvement in leadership activities (at your school, job, community, or within your family) will help you to make an impact both in and out of the classroom while enrolled at ut.
+3. the core purpose of the university of texas at austin is, to transform lives for the benefit of society. please share how you believe your experience at ut-austin will prepare you to change the world after you graduate.
+...where do you even begin?
+here are a few excerpts from what i submitted.
+1. i couldn't tell if mahir was married. he was missing his ring
+finger-odd, considering we were at a deaf action center. i decided to
+approach him with a laptop, greeting him with an asl-to-text model i'd
+built over the summer. with a grin, he used his thumb to substitute for
+his missing finger, forming an "f" at the laptop's camera. my
+model returned a "k." then it returned an "n" as a
+"j." from a 92% to a 21% recognition accuracy, i needed a
+reliable way to understand mahir.
+2. every wednesday and saturday, i wrap my knuckles in leather and get
+ready to fight rocky in the ring. no, not balboa—my rocky's a 6'2, 220lb
+fighter with heels of steel. hands up. cross-arm block. it doesn't
+matter—his front kicks always leave me wheezing on the octagon's rough
+blue mats. rocky doesn't have a degree, but the mindset he's ingrained
+into me through countless bruising blows will guide me to support myself
+and others within ut's society.
+3. standing at 4 feet tall, pepper rolls by your side as she beams
+with soft messages reminding you to take your pills for the day. she'll
+recognize faces for you, remind you to shower, and communicate with
+emergency services if you're not able to yourself. pepper healthcare
+robots are the solution to what humans can't provide patients— 24/7
+care. through the cns, i hope to bring these robots to austin and ensure
+they fill the physical and emotional gaps humans cannot.
+firstly, i hope the main thing that's immediately evident in each of these
+excerpts is the first sentence & the rapid fire lines right after.
+in my view, admissions officers are often tired from reading essays that
+climax towards the end of the essay.
+if you can engage them with unique ideas and syntax, you in turn show a
+sense of intellectual vitality and mastery of language that'll
+"humanize" your application.
+in most cases, ao's want to vouch for you—give them every reason to do so.
+secondly, finding the content behind your essays is just as important as the
+writing itself.
+before i began drafting any of my essays for ut, i took a lot of time to do
+research within the field of robotics—in particular, at georgia tech. the
+majority of my research was actually done for other schools.
+what worked for me was looking for a certain set of specific programs or technologies that i was avid about and writing whatever came to mind.
+in my case, this repeated process of research and rewriting allowed me to really refine my essays and cultivate clear vision and intention in them.
+supplemental essays are the hardest part.
+each school has
+their own version of them, and it's near impossible to write something
+different for each one.
+try to align your writing with common themes throughout each schools
+prompt and reuse your essays as much as possible
+—it'll save you countless hours.
+my application: extracurriculars
+all the advice you'll ever need.
+reflection
+applications aren't fun. it's also a massive lottery system. however,
+it's something every senior must hurdle over. after all the ap testing,
+act/sat practice and gpa keepy-uppies, it'd be a shame to give up now. every
+small tweak to your app will make it all the more likely that when an ao's
+forced to choose between 20-30 different applicants for a single spot,
+you'll have just the smaller advantage.
+send me a message on any of my socials and i'd be more than happy to
+call or do essay reviews!
+if you made it this far, i leave you with this:
+"it's not just about college admissions, it's about great writing,
+self-presentation, and thinking deeply about yourself and ideas." -
+admitium
+best of luck everyone!

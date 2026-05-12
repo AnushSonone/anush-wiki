@@ -100,7 +100,7 @@ async function loadCorpusSnippet(maxChars: number): Promise<string> {
   let out = '';
   for (const name of files) {
     const fp = path.join(dir, name);
-    const chunk = clip((await fs.readFile(fp, 'utf8')).trim(), 4000);
+    const chunk = clip((await fs.readFile(fp, 'utf8')).trim(), 11000);
     if (!chunk) continue;
     out += `--- ${name} ---\n${chunk}\n\n`;
     if (out.length >= maxChars) break;
@@ -239,7 +239,7 @@ export async function POST(req: Request) {
 
   const corpusRevision = await loadTextFile(32, 'assistant', 'CORPUS_REVISION');
   const baseSystem = await loadTextFile(8000, 'assistant', 'system-prompt.txt');
-  const corpus = await loadCorpusSnippet(6200);
+  const corpus = await loadCorpusSnippet(28000);
 
   const systemWithContext = [
     baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',

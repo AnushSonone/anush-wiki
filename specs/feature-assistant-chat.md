@@ -55,19 +55,24 @@ Cross-link this section with the eventual hosting doc or README when the server 
 
 ## Personality and tone
 
-- **Stable system directive** authored in-repo (e.g. `assistant/system-prompt.txt`—exact path chosen at implementation time) defines voice, humility, refusal posture, and disallowed domains (legal/medical/financial advice, hatred, exploitation, credential harvesting).
-- Personality MUST NOT include instructions that encourage inventing biography details not grounded in corpus + clearly labeled general reasoning.
+- **Stable system directive** authored in-repo (`assistant/system-prompt.txt`) defines voice, humility, refusal posture, and disallowed domains (legal/medical/financial advice, hatred, exploitation, credential harvesting).
+- **Lowercase replies:** assistant user-visible prose stays **all lowercase** (matches site copy rules in `AGENTS.md`).
+- **Voice:** respectful by default; **humble builder** posture (plain-spoken, modest about accomplishments); if the visitor is hostile or abusive, responses become **short and direct** without insulting the visitor—boundaries first.
+- **Bootstrap opener (client UX):** the embedded widget MAY show a single canned assistant line when the transcript is empty (e.g. after first load). That line is **not** a model completion and **must not** be sent as an assistant turn to `/api/chat` (omit from POST bodies so quota and model history stay honest).
+- Personality MUST NOT encourage inventing biography details not grounded in corpus + clearly labeled general reasoning.
 - **Client cannot override** model system instructions beyond sending user messages and read-only UX metadata (conversation id optional).
 
 ---
 
 ## Knowledge boundary ("only this much")
 
-- Maintain a **versioned corpus** under the repository (recommended top-level folder `assistant/knowledge/` or similar) consisting of excerpts you approve—mirrors **public-facing** wiki facts plus optional FAQs. No live crawl of filesystem, email, notes, cloud drives, private repos, etc.
+- Maintain a **versioned corpus** under `assistant/knowledge/` consisting of excerpts you approve—mirrors **public-facing** wiki facts, **résumé page snapshot** (`about.html`–aligned text), long-form posts as excerpts, plus a small site map file. No live crawl of filesystem, email, notes, cloud drives, private repos, or raw pdf parsing unless an excerpt is checked into git.
+- **Canonical résumé facts:** structured bullets duplicated from the public about/résumé page live in a dedicated corpus file (e.g. `002-resume-published.txt`) so the assistant can answer detailed résumé questions without claiming access to hidden files.
+- **Ordering:** filenames MAY use numeric prefixes (`001-…`, `002-…`) so deterministic concatenation order matches operator intent.
 - **Filename safety:** Only ingest corpus files whose names match a strict **allowlist** (e.g. `^[a-z0-9][a-z0-9_-]*\.txt$` — adjust in implementation). Reject `.`, `..`, path separators, or non-UTF8/control characters in names so directory listings cannot traverse outside `assistant/knowledge/` via malicious filenames.
 - Factual statements about projects, chronology, people, URLs, SHOULD be **quoted or summarized from retrieved snippets**. If retrieval returns nothing confident, assistant MUST defer ("not in published notes") rather than hallucinate biography.
 - **Retrieval-first:** server loads top-k snippets per turn (or deterministic tool retrieval) BEFORE or AS part of composing the model payload. Retrieval query MUST be constrained (length caps, lexical filters) server-side only.
-- **Corpus freshness:** corpus updates require human review merging into git OR an explicit audited pipeline; nightly blind sync without review is discouraged for personal reputational accuracy.
+- **Corpus freshness:** corpus updates require human review merging into git OR an explicit audited pipeline; nightly blind sync without review is discouraged for personal reputational accuracy. bump **`assistant/CORPUS_REVISION`** when pack meaningfully changes so caches/debugging stay traceable.
 
 ---
 

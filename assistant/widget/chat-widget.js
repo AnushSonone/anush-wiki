@@ -5,6 +5,10 @@
   fetch('/api/chat', { method: 'GET', credentials: 'same-origin' }).catch(() => {});
 
   const STORAGE_KEY = 'wiki-assistant-history-v1';
+  /** Shown in-transcript only; stripped before POST so APIs always start from real user turns. */
+  const BOOTSTRAP_ASSISTANT_GREETING =
+    "what's up man! nice to see you here :)";
+
   const msgs = [];
 
   try {
@@ -25,6 +29,14 @@
     }
   } catch {
     sessionStorage.removeItem(STORAGE_KEY);
+  }
+
+  if (msgs.length === 0) {
+    msgs.push({
+      role: 'assistant',
+      content: BOOTSTRAP_ASSISTANT_GREETING,
+    });
+    persist();
   }
 
   function persist() {
@@ -147,6 +159,19 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  /** Omit synthetic opener so model payloads never lead with an assistant turn. */
+  function messagesForApi() {
+    const out = msgs.slice();
+    if (
+      out.length &&
+      out[0].role === 'assistant' &&
+      out[0].content === BOOTSTRAP_ASSISTANT_GREETING
+    ) {
+      out.shift();
+    }
+    return out;
+  }
+
   rerenderTranscript();
 
   function toggle(open) {
@@ -202,7 +227,7 @@
           Accept: 'application/json',
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ messages: msgs }),
+        body: JSON.stringify({ messages: messagesForApi() }),
       });
 
       const data = /** @type {Record<string, unknown>} */ (

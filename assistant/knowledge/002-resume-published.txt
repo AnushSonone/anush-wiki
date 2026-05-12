@@ -1,0 +1,25 @@
+published résumé page snapshot (`about.html`) — keep wording faithful to this excerpt; pdf mirror: `/docs/Anush_Sonone_Resume_2028_Current.pdf`.
+
+lead
+- cs @ ut austin. interested in data, infrastructure, ai, and fintech, especially within systems that turn signals and raw data into useful analytics.
+
+education
+- university of texas at austin — b.s. computer science, business minor · austin, tx · expected may 2028
+
+projects (titles link out on the live site)
+- @visa — unified fraud investigation tooling for banks; low-latency scoring pipeline (~2k+ tps); copilot helping analysts interpret scores and investigation context.
+- @afterquery (yc w25) — multi-step evaluation pipelines and measurement harnesses for ai tool calls; large-scale evaluation datasets (~two-million-user scale).
+- @profluento ai — raised $100k+; ai platform for wealth managers with data pipelines and crm-style workflows for 15+ firms; agents automating outreach from ranked leads and firm context.
+- @cdk global — role-based access and per-request authorization for 44k+ dealerships; audit logging and change tracking for high-volume admin updates.
+- wealth manager lead scoring engine — api over 10m+ linkedin profiles ranking high-net-worth prospects; weighted demographic signals; 150+ verified wealth-manager matches.
+- lapsynk: formula 1 ai copilot (hacktx 2025) — real-time telemetry dashboard and ai voice agent for communication timing and driver feedback.
+
+achievements
+- invited to y combinator startup school 2026 (invite-only)
+- invited to pwc engineer your career (invite-only), 2026
+- 3rd place @ hacktx 2025 (733 hackers) — northmark cloud & compute track
+
+contact
+- anushse@utexas.edu
+- linkedin: linkedin.com/in/anushse
+- github: github.com/anushsonone
