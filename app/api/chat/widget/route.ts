@@ -10,7 +10,10 @@ export async function GET() {
   return new Response(body, {
     headers: {
       'Content-Type': 'application/javascript; charset=utf-8',
-      'Cache-Control': 'public, max-age=86400',
+      'Cache-Control':
+        process.env.NODE_ENV === 'production'
+          ? 'public, max-age=0, must-revalidate'
+          : 'no-store',
     },
   });
 }

@@ -23,12 +23,15 @@
       if (Array.isArray(parsed)) {
         parsed.forEach((m) => {
           if (
-            m &&
-            (m.role === 'user' || m.role === 'assistant') &&
-            typeof m.content === 'string'
+            !m ||
+            (m.role !== 'user' && m.role !== 'assistant') ||
+            typeof m.content !== 'string'
           ) {
-            msgs.push({ role: m.role, content: m.content });
+            return;
           }
+          const trimmed = m.content.trim();
+          if (!trimmed) return;
+          msgs.push({ role: m.role, content: trimmed });
         });
       }
     }
@@ -189,7 +192,8 @@
   }
 
   function rerenderTranscript() {
-    log.hidden = msgs.length === 0;
+    const hasVisibleTurns = msgs.some((m) => m.content.trim());
+    log.hidden = !hasVisibleTurns;
     log.innerHTML = '';
 
     msgs.forEach((m) => {
@@ -220,6 +224,7 @@
     backdrop.hidden = !willOpen;
 
     if (willOpen) {
+      rerenderTranscript();
       inputEl.focus({ preventScroll: true });
       scrollLogToEnd();
       return;

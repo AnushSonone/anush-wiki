@@ -10,7 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "verify:chat-widget": "node scripts/verify-chat-widget-route.mjs"
+    "verify:wiki-public": "node scripts/verify-wiki-public-sync.mjs",
+    "verify:chat-widget": "node scripts/verify-chat-widget-route.mjs",
+    "verify": "npm run verify:wiki-public && npm run verify:chat-widget"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.106",
