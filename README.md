@@ -24,6 +24,17 @@ npm run dev
 
 open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors only **`src/*` → `public/`** (HTML/CSS assets). **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** from **`app/api/chat/widget/route.ts`** — it is **not** copied into `public/`. canonical wiki markup stays under `src/`; after editing the widget source, save **`assistant/widget/chat-widget.js`** and redeploy (or restart dev).
 
+## deploy on vercel (next.js)
+
+content html/css lives under `src/`, but **`package.json`**, **`app/`**, **`middleware.ts`**, and **`vercel.json`** live at the **repository root**. the wiki assistant **`/api/*`** routes require a real **`next build`**.
+
+in **project → settings → general**:
+
+1. **root directory** — leave **empty** (repo root). if this is set to **`src`**, vercel ignores root **`vercel.json`** / **`package.json`** and deploys static html only → **`/api/chat`** and **`/api/chat/widget`** return **`NOT_FOUND`**. healthy builds show **`Installing dependencies`** and **`next build`** in logs (minutes), not **`Build Completed in /vercel/output [18ms]`**.
+2. **framework preset** — **next.js**.
+3. **output directory** — leave **empty** (do not set **`public`** or **`out`** unless you intend static-only export).
+4. **build command** — **`npm run build`** (already the repo default via **`vercel.json`**).
+
 ## secrets & kill-switch
 
 configure keys through environment variables consumed by `app/api/chat/route.ts` — see `.env.example`:
