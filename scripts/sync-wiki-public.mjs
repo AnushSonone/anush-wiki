@@ -4,11 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(fileURLToPath(new URL('..', import.meta.url)));
 const wikiSrc = path.join(root, 'src');
-const widgetSrc = path.join(root, 'assistant', 'widget', 'chat-widget.js');
 const publicDir = path.join(root, 'public');
 
 await fs.promises.mkdir(publicDir, { recursive: true });
 await fs.promises.cp(wikiSrc, publicDir, { recursive: true, force: true });
 
-await fs.promises.copyFile(widgetSrc, path.join(publicDir, 'chat-widget.js'));
-console.warn('sync-wiki: src/ → public/ + assistant/widget/chat-widget.js → public/chat-widget.js');
+/** `/chat-widget.js` is served only by `app/chat-widget.js/route.ts` (never copied here) so Next does not prefer a static file that may be missing on the CDN. */
+console.warn('sync-wiki: src/ → public/ (wiki static mirror only; assistant script is GET /chat-widget.js route)');

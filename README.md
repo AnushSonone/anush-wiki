@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors `src/*` → `public/` and copies `**assistant/widget/chat-widget.js**` → `**public/chat-widget.js**` for local static hosting parity. **`GET /chat-widget.js`** is implemented by **`app/chat-widget.js/route.ts`**, which reads **`assistant/widget/chat-widget.js`** so production always serves the script even when `public/` is incomplete on the CDN. canonical wiki markup stays under `src/`; after editing the widget source, run **`npm run sync-wiki`** when you want `public/` refreshed for local runs.
+open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors only **`src/*` → `public/`** (HTML/CSS assets). **`GET /chat-widget.js`** is served by **`app/chat-widget.js/route.ts`**, which reads **`assistant/widget/chat-widget.js`** — it is **not** copied into `public/` so Next never prefers a missing static file over that route. canonical wiki markup stays under `src/`; after editing the widget source, save **`assistant/widget/chat-widget.js`** and redeploy (or restart dev).
 
 ## secrets & kill-switch
 
@@ -41,3 +41,5 @@ constraints live in `**specs/design-philosophy-and-constraints.md**`. brief reca
 - **no silent third-party widgets** beyond the narrowly documented assistant flow.
 
 see also `[AGENTS.md](AGENTS.md)` for validation steps before committing.
+
+**Assistant bundle sanity (production parity, wipes `.next/` + `public/` then rebuilds):** run **`npm run verify:chat-widget`** — asserts **`GET /chat-widget.js`** is **200** and **`public/chat-widget.js` does not exist** after sync (script is served only by **`app/chat-widget.js/route.ts`**).
