@@ -1,5 +1,4 @@
-/* Praneel IA (column, header row) + MFWS surface — HTML + CSS only
-   See specs/visual-language-motherfuckingwebsite.md */
+/* Praneel IA + MFWS surface for core wiki pages; optional defer-loaded assistant matches specs/feature-assistant-chat.md */
 
 :root {
   color-scheme: light;
@@ -521,3 +520,158 @@ body.page-blog::after {
   padding-left: 1rem;
   border-left: 2px solid var(--ink);
 }
+
+/* First-party wiki assistant — script: assistant/widget/chat-widget.js (synced → public/). specs/feature-assistant-chat.md */
+.wiki-assistant {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wiki-assistant ::selection {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.wiki-assistant button:focus,
+.wiki-assistant button:focus-visible,
+.wiki-assistant textarea:focus,
+.wiki-assistant textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.wiki-assistant button::-moz-focus-inner {
+  border: 0;
+}
+
+.wiki-assistant__launcher {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 40;
+  margin: 0;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.wiki-assistant__launcher:hover {
+  text-decoration: underline;
+}
+
+
+.wiki-assistant__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.wiki-assistant__dialog {
+  position: fixed;
+  right: 1rem;
+  bottom: 4.25rem;
+  z-index: 42;
+  -webkit-tap-highlight-color: transparent;
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: min(70vh, 32rem);
+  display: flex;
+  flex-direction: column;
+  /* single inset used for chrome padding, stacked gaps, and toolbar button spacing */
+  --wa-pad: 0.75rem;
+  gap: var(--wa-pad);
+  padding: var(--wa-pad);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.08);
+}
+
+.wiki-assistant__dialog[hidden],
+.wiki-assistant__backdrop[hidden] {
+  display: none !important;
+}
+
+.wiki-assistant__sr-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wiki-assistant__log {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  border: 1px solid var(--hairline);
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  background: var(--canvas);
+}
+
+.wiki-assistant__turn {
+  margin: 0 0 0.6rem;
+}
+
+.wiki-assistant__turn:last-child {
+  margin-bottom: 0;
+}
+
+.wiki-assistant__turn-label {
+  font-weight: 700;
+}
+
+.wiki-assistant__status {
+  font-size: 0.85rem;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.wiki-assistant__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wa-pad, 0.75rem);
+}
+
+.wiki-assistant__input {
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem;
+  border: 1px solid var(--hairline);
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--canvas);
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+
+.wiki-assistant__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wa-pad, 0.75rem);
+}
+
+.wiki-assistant__send,
+.wiki-assistant__close {
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+

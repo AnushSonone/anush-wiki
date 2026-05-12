@@ -1,6 +1,6 @@
 # Ralph — BUILD mode (one task per iteration)
 
-**Project:** Minimal personal landing page — HTML and CSS only, aligned with the *ideology* of [motherfuckingwebsite.com](https://motherfuckingwebsite.com/) (lightweight, semantic, legible, accessible).
+**Project:** Minimal personal wiki under `src/`: semantic HTML + a shared stylesheet define the browsing experience; optionally one **first-party wiki assistant** per `specs/feature-assistant-chat.md` / constitution exception adds scripts + HTTPS API code. Matches the *spirit* of [motherfuckingwebsite.com](https://motherfuckingwebsite.com/) — lightweight defaults, intentional constraints.
 
 ---
 
@@ -20,7 +20,7 @@
 
 1. From `IMPLEMENTATION_PLAN.md`, choose the **single most important** open item. Before changing files, **search and read** — **don’t assume not implemented**.
 
-2. Implement that item in `src/*` (and `specs/*` only if fixing a spec typo or contradiction). Keep changes minimal and consistent with existing patterns.
+2. Implement that item primarily in `src/*` plus any server paths described in specs / `IMPLEMENTATION_PLAN.md` (`specs/feature-assistant-chat.md` allowances only). Avoid introducing dependencies or vendor scripts forbidden there; keep deltas minimal versus existing conventions.
 
 3. Run **all validation steps** listed in `AGENTS.md` that apply to your change. Fix failures before you or the user commits.
 
@@ -36,9 +36,10 @@
 
 ## Invariants (non-negotiable)
 
-- **HTML + CSS only** in `src/*` for the shipped experience: no JavaScript.
-- **No bloat:** no unapproved third parties; prefer system fonts unless a spec says otherwise.
-- **Semantic, accessible** markup; readable typography and contrast.
+- **Core reading chrome** in `src/*` stays semantic + stylesheet-driven without accidental framework payloads.
+- **Scripts / WASM:** only permitted through the narrowly scoped wiki assistant allowances in `specs/feature-assistant-chat.md`; never ship analytics pixels, rogue CDNs, or third-party widgets without a constitution amendment.
+- **No bloat:** keep third parties out unless exempted assistant sub-processors are documented under that spec’s privacy section.
+- **Semantic, accessible** markup and assistant UI cues once present; typography + contrast per MFWS guidance.
 
 ---
 

@@ -4,8 +4,9 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 ## Technology constraints
 
-- **HTML + CSS only** for what visitors download. No JavaScript, no WebAssembly, no framework runtime.
-- **No third-party embeds** (analytics, chat widgets, tag managers, ad scripts, social SDKs) unless a future spec explicitly names an exception and justifies payload impact.
+- **HTML + CSS only** for the **core** pages (`index`, `about`, blog posts, shared stylesheet): no framework runtime shipped for ordinary reading chrome.
+- **Optional first-party assistant:** A single wiki assistant **may** add **first-party JavaScript** and a companion API **only** as defined in [feature-assistant-chat.md](./feature-assistant-chat.md). That spec defines **rollout phases** (**Phase A:** KV + signed-cookie quotas before optional transcript storage), **server-enforced daily caps**, **non-spoofable visitor identity**, **corpus containment**, and **no reliance on client-only rate limits**. No other scripts, WebAssembly bundles, or client-side assistants are permitted without amending this document again.
+- **No third-party embeds** (analytics, vendor chat widgets, tag managers, ad scripts, social SDKs) unless a spec explicitly names an exception and justifies payload impact. The wiki assistant MUST be hosted and controlled by you (same project or explicitly listed first-party origin); loading model-provider SDKs from a CDN MUST follow the CSP and SRI rules in `feature-assistant-chat.md`.
 - **No web font CDN** and no bundled `@font-face` unless a future spec explicitly allows it. Default: **serif** stack only (see visual language spec)—not sans/system-ui for primary copy.
 - **Inline SVG** is allowed inside HTML for small monochrome icons (e.g. social links) when given accessible names via the enclosing `<a>`; no SVG sprite CDNs.
 - **Serif-first reading** and **white canvas** per [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md)—no warmed boutique backgrounds or gray “UI typography” for body/nav.
@@ -18,7 +19,8 @@ This spec is the **constitution** for the personal landing page. It translates t
 ## Performance and weight
 
 - **Combined** byte size of `src/index.html` + `src/about.html` + `src/styles.css` (excluding optional local images not yet defined) SHOULD stay **under ~35 KiB** uncompressed as a soft budget. If content grows beyond, update this spec with a new ceiling and reason.
-- **No render-blocking** resources other than the single stylesheet linked from HTML.
+- Assistant JavaScript/CSS (if present) SHOULD have its **own documented soft ceiling** in [feature-assistant-chat.md](./feature-assistant-chat.md); it MUST NOT inflate the core trio above unless that spec merges bundles into the same files and adjusts the ceiling here accordingly.
+- **No render-blocking** resources other than the single stylesheet linked from core HTML pages. Assistant bundles MUST load with `defer`, `async`, or dynamic import patterns that do not block first paint of the article column (exact pattern in assistant spec).
 - Prefer a **single CSS file** unless a later spec splits concerns for maintenance.
 
 ## Structure and semantics
@@ -48,6 +50,6 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 The site **satisfies** this spec when:
 
-1. View source shows HTML + CSS only; no scripts in markup.
-2. Validator-smoke (manual or tool): no knowingly broken semantics that break AT (landmarks present, sensible heading order).
-3. `wc -c` on HTML + CSS is within the budget above or the spec has been amended.
+1. Core pages’ shipped markup uses **semantic HTML + the global CSS** without extra frameworks. If the wiki assistant is enabled, `<script>`/`<iframe>` hooks MUST match [feature-assistant-chat.md](./feature-assistant-chat.md) (single feature, first-party boundary, no undocumented third-party widgets).
+2. Validator-smoke (manual or tool): no knowingly broken semantics that break AT (landmarks present, sensible heading order). Assistant surfaces MUST meet the accessibility requirements in `feature-assistant-chat.md`.
+3. `wc -c` on core HTML + `styles.css` is within the budget above or this spec documents a revised ceiling; assistant payloads are justified per `feature-assistant-chat.md`.

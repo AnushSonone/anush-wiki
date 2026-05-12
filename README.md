@@ -1,31 +1,43 @@
-# anush.wiki (static site)
+# anush.wiki (static wiki + optional first-party assistant)
 
-personal site: bio, blog, and contact — shipped as plain html and css under `src/`.
+personal site: bio, blog, and contact — authored as plain html + css under `src/`.
 
-## design
+an optional defer-loaded `**/chat-widget.js**` + `**/api/chat**` route (spec’d in `[specs/feature-assistant-chat.md](specs/feature-assistant-chat.md)`) lets readers ask grounded questions via a corpus kept in-repo under `assistant/`. model keys stay on the server only.
 
-the site is hand-written html and css with a content-first bias: readable serif type, semantic structure, and a minimal network footprint—no client-side js, no frameworks, no font or analytics cdns. the approach matches the constraints in `specs/design-philosophy-and-constraints.md` and aligns with the same minimal stack as [motherfuckingwebsite.com](https://motherfuckingwebsite.com/).
+## preview locally — static wiki only (`src/` unchanged)
 
-### principles
-
-- **content first** — authored markup, not a framework runtime; a single narrow reading column; landmarks (`main`, `nav`, `section`, etc.) and heading hierarchy define structure; link text stays descriptive instead of bare urls.
-- **almost nothing to download** — visitors get html + one linked stylesheet only; no javascript or webassembly in shipped files; no third-party embeds; core routes aim for a modest uncompressed size budget on html+css (see spec) with only `styles.css` as a blocking resource.
-- **semantics over chrome** — one `h1` per page; no skipped levels for visual tricks; system link colors (`LinkText` / `VisitedText`) with fallbacks; `:focus-visible` on interactive elements; small inline svg allowed for icons when the enclosing control has an accessible name.
-- **no accidental complexity** — the site is static files you can open from `src/` with a simple static server; no bundler or build step is required to consume what ships to readers.
-
-## layout
-
-- `src/index.html` — blog list and entry to the site.
-- `src/about.html` — about / resume-style page.
-- `src/blog/` — individual posts.
-- `src/styles.css` — shared styles.
-
-## preview locally
-
-from the repo root:
+pure html preview (no assistant script success — `/chat-widget.js` is not emitted by `python http.server src`):
 
 ```bash
 cd src && python3 -m http.server 8080
 ```
 
-open `http://127.0.0.1:8080/` in a browser.
+open `http://127.0.0.1:8080/`.
+
+## preview locally — wiki + assistant (next dev)
+
+```bash
+cp .env.example .env.local   # model keys + quota vars (see “secrets & kill-switch”); never commit `.env*`
+npm install
+npm run dev
+```
+
+open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors `src/*` → `public/` and copies `**assistant/widget/chat-widget.js**` → `**public/chat-widget.js**`. canonical wiki markup stays under `src/`.
+
+## secrets & kill-switch
+
+configure keys through environment variables consumed by `app/api/chat/route.ts` — see `.env.example`:
+
+- **`GOOGLE_*` / `OPENAI_*`** — model providers.
+- **`DISABLE_CHAT`** — kill-switch for the endpoint.
+- **Phase A quota:** **`QUOTA_COOKIE_SECRET`** (HMAC signing), plus **`KV_REST_API_URL`** / **`KV_REST_API_TOKEN`** (Vercel KV) **or** **`UPSTASH_REDIS_REST_*`** (Upstash). local dev without Redis: set **`QUOTA_DISABLED_LOCAL=1`** with **`NODE_ENV=development`** only (never in production).
+
+## principles
+
+constraints live in `**specs/design-philosophy-and-constraints.md**`. brief recap:
+
+- **content first** — semantic html, single global `**src/styles.css`**, landmarks + heading order, descriptive link labels.
+- **small core payload** — the mfws-style budget still applies to the trio `index/about/styles`.
+- **no silent third-party widgets** beyond the narrowly documented assistant flow.
+
+see also `[AGENTS.md](AGENTS.md)` for validation steps before committing.

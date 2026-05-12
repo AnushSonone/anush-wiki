@@ -1,6 +1,6 @@
 # Ralph — PLANNING mode (gap analysis only)
 
-**Project:** Minimal personal landing page — HTML and CSS only, aligned with the *ideology* of [motherfuckingwebsite.com](https://motherfuckingwebsite.com/) (lightweight, semantic, legible, accessible, no framework chrome). satirical tone on the *original site* is not a content requirement.
+**Project:** Minimal personal wiki under `src/`: semantic HTML + a single stylesheet for core reading chrome; optionally one **first-party wiki assistant** (scripts + HTTPS API only as defined in `specs/feature-assistant-chat.md` / constitution exception). Aligned ideologically with [motherfuckingwebsite.com](https://motherfuckingwebsite.com/) — satirical tone on the *original site* is not a content requirement here.
 
 ---
 
@@ -30,10 +30,11 @@
 
 ## Invariants (non-negotiable)
 
-- **HTML + CSS only** for the shipped page(s): no JavaScript, no WASM, no framework runtime.
-- **Small and fast:** no third-party trackers, ads, or font CDNs unless a spec explicitly allows an exception.
-- **Semantic HTML5** with clear hierarchy; **accessible** defaults (landmarks, headings, link text, focus visibility).
-- **Responsive** with minimal CSS — no heavy layout frameworks.
+- Core `src/**/*.html` + `styles.css` remain semantic + lightweight (**no accidental framework bundles**).
+- Scripts/WASM/embeds (**including** the wiki assistant path) MAY exist **only** when they match `specs/feature-assistant-chat.md`: first-party control, CSP/SRI stance in that spec, no stray vendor widgets.
+- **Small and fast:** no third-party trackers, ads, or font CDNs unless a spec explicitly allows an exception aside from narrowly documented assistant sub-processors defined there.
+- **Semantic HTML5** with clear hierarchy; **accessible** defaults (landmarks, headings, link text, focus visibility) plus assistant UI rules once present.
+- **Responsive** layout with minimal CSS — no heavyweight layout frameworks.
 
 ---
 
@@ -41,4 +42,4 @@
 
 **Plan only.** Do **not** edit `src/*`, do **not** run implementation tasks, do **not** commit code. You may update `IMPLEMENTATION_PLAN.md` and `specs/*` if you are resolving spec contradictions.
 
-**ULTIMATE GOAL:** A merge-ready, static personal landing page that matches `specs/*` and respects `specs/design-philosophy-and-constraints.md`.
+**ULTIMATE GOAL:** A merge-ready personal wiki that matches `specs/*`, respects `specs/design-philosophy-and-constraints.md`, and—if pursued—implements the optional assistant strictly per `specs/feature-assistant-chat.md`.

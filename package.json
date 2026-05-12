@@ -1,0 +1,31 @@
+{
+  "name": "anush-wiki",
+  "private": true,
+  "scripts": {
+    "sync-wiki": "node scripts/sync-wiki-public.mjs",
+    "predev": "npm run sync-wiki",
+    "prebuild": "npm run sync-wiki",
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.106",
+    "@google/generative-ai": "^0.24.1",
+    "@upstash/redis": "^1.38.0",
+    "ai": "^5.0.186",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "eslint": "^9.21.0",
+    "eslint-config-next": "^15.1.7",
+    "typescript": "^5.8.2"
+  }
+}

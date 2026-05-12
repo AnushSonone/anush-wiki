@@ -1,0 +1,8 @@
+public wiki facts distilled for retrieval (mirror what visitors can already read):
+
+- maintainer display name appears as "anush sonone".
+- headline interests include data work, infrastructure, ai, and fintech-flavored analytics.
+- studies computer science at the university of texas at austin ("ut austin", "texas").
+- site structure: homepage lists writings; `/about.html`-style page covers bio + resume pdf link `/docs/Anush_Sonone_Resume_2028_Current.pdf`; long-form post about ut austin admissions lives under `/blog/college-application-journey.html`.
+
+when asked for anything not enumerated here or in sibling corpus files, say you cannot infer it from the published pack.

@@ -4,7 +4,9 @@ Keep this file **short and operational**. Progress and narrative live in `IMPLEM
 
 ## Project
 
-Static personal landing page under `src/`: **HTML + CSS only** (no JavaScript in shipped files). Goals and constraints: `specs/design-philosophy-and-constraints.md`.
+Static personal wiki under `src/`: core reading chrome is **semantic HTML + one global stylesheet** (no shipped framework runtime). Constraints: `specs/design-philosophy-and-constraints.md`.
+
+Optional **wiki assistant** (**first-party embed + HTTPS API**) may ship **narrow, documented** scripts + server code per `specs/feature-assistant-chat.md`; model keys stay server-side only. Anything else claiming to be analytics/chat SDKs/embeds stays forbidden unless another spec exempts it.
 
 ## Git: no commits or pushes without explicit approval
 
@@ -37,6 +39,16 @@ cd src && python3 -m http.server 8080
 
 Open `http://127.0.0.1:8080/` (serves `index.html` by default).
 
+### Wiki + embedded assistant preview
+
+Uses Next.js locally (mirrors `src/* → public/` automatically before `next dev`). from repo root after `npm install`:
+
+```bash
+npm run dev
+```
+
+Open `http://127.0.0.1:3000/`. **`cd src && python …`** previews raw html/css only; `/chat-widget.js` resolves only on the Next server.
+
 ## Validation (backpressure)
 
 Run before any commit the user requested (or when handing off so they can commit locally):
@@ -51,13 +63,22 @@ Run before any commit the user requested (or when handing off so they can commit
 
    If `about.html` or blog pages do not exist yet, omit those paths. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
 
+   Track assistant JS/CSS bundle from source (`specs/feature-assistant-chat.md`); optionally:
+
+   ```bash
+   wc -c assistant/widget/chat-widget.js
+   ```
+
+
 3. **Semantics / a11y quick checks:**
    - One `h1` in the document (unless a spec defines a deliberate exception).
    - Landmarks: `header`, `main`, `footer` present where applicable.
    - Every `a href` has meaningful link text (no “click here” alone).
    - Images (if any later) have appropriate `alt` text per spec.
+   - **Wiki assistant (when wired):** launcher + transcript surface keyboard-operable (`Tab`, `Esc` if overlaid); `:focus-visible` obvious; streamed or batched replies announced per `feature-assistant-chat.md`; exhaustion (`429`) copy remains calm and understandable.
 
 No automated test runner is required; add optional tools in this section if you introduce them.
+Before shipping assistant client bundles or edge functions, skim built artifacts / env templates for leaked model keys (`grep`/CI acceptable).
 
 ## Git conventions
 

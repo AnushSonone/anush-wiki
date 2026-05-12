@@ -7,7 +7,7 @@
 
 MFWS ships **no author stylesheet**: content is plain HTML5 on the default browser canvas. This spec translates that into **testable rules** for our **HTML + CSS** site. Where CSS is required (layout, focus rings), it must **not** reintroduce a “designed gray scale,” custom fonts, or Tailwind-ish muted UI.
 
-**Do not** copy MFWS’s satirical prose or analytics script; the [constitution](./design-philosophy-and-constraints.md) already bans client JS and third-party embeds.
+**Do not** copy MFWS’s satirical prose or analytics script; the [constitution](./design-philosophy-and-constraints.md) keeps core reading pages on **HTML + CSS only** and bans undocumented third-party embeds—the **optional wiki assistant** is the sole scripted exception and MUST follow [feature-assistant-chat.md](./feature-assistant-chat.md).
 
 ## Palette (author intent)
 
