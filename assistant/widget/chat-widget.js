@@ -131,10 +131,14 @@
 
   launcherShell.appendChild(launcher);
 
-  /** Static html includes `#wiki-agent-mount` in `site-chrome`; this script is loaded via `/api/chat/widget` and must attach after the node exists. */
+  /** Prefer `#wiki-agent-mount`; class fallback matches static html if id is stripped. */
   function attachLauncherToDom() {
-    const mountEl = document.getElementById('wiki-agent-mount');
+    const mountEl =
+      document.getElementById('wiki-agent-mount')
+      ?? document.querySelector('.site-chrome__assistant-host');
+
     if (mountEl) {
+      launcherShell.classList.remove('wiki-assistant__launcher-shell--floating');
       mountEl.appendChild(launcherShell);
     } else {
       launcherShell.classList.add('wiki-assistant__launcher-shell--floating');

@@ -84,12 +84,16 @@ a:visited {
   margin: 0 auto;
   padding: 12vh 1.5rem 2rem;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* long blog posts: avoid min-height + padding scroll quirks; spacer can't collapse */
 .site-main.site-main--blog {
   min-height: unset;
   padding-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
 body.page-blog::after {
@@ -195,11 +199,12 @@ body.page-blog::after {
 }
 
 .site-chrome {
-  margin-top: 1.25rem;
-  padding-top: 0.75rem;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 2rem;
   border-top: 1px solid var(--hairline);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   align-items: start;
   gap: 1rem;
 }
@@ -208,12 +213,16 @@ body.page-blog::after {
   display: flex;
   justify-content: flex-end;
   align-items: flex-start;
-  width: 100%;
+  justify-self: end;
+  width: max-content;
+  max-width: 100%;
   min-width: 0;
 }
 
-.site-chrome__assistant-host > .wiki-assistant__launcher-shell {
-  position: static;
+.site-chrome .wiki-assistant__launcher-shell {
+  position: static !important;
+  width: max-content;
+  max-width: 100%;
 }
 
 @media (max-width: 28rem) {
@@ -574,6 +583,8 @@ body.page-blog::after {
   bottom: 1rem;
   right: 1rem;
   left: auto;
+  width: max-content;
+  max-width: min(28rem, calc(100vw - 2rem));
   z-index: 40;
 }
 
