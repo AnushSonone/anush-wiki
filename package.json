@@ -4,9 +4,8 @@
   "scripts": {
     "sync-wiki": "node scripts/sync-wiki-public.mjs",
     "predev": "npm run sync-wiki",
-    "prebuild": "npm run sync-wiki",
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "build": "npm run sync-wiki && next build",
     "start": "next start",
     "lint": "next lint"
   },
