@@ -47,9 +47,9 @@ Uses Next.js locally (mirrors `src/* → public/` automatically before `next dev
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/`. **`cd src && python …`** previews raw html/css only; `/chat-widget.js` resolves only on the Next server **`GET` route** (`app/chat-widget.js/route.ts`), not from `src/` alone.
+Open `http://127.0.0.1:3000/`. **`cd src && python …`** previews raw html/css only; **`/api/chat/widget`** resolves only on the Next server (`app/api/chat/widget/route.ts`), not from `src/` alone.
 
-Optional production-parity check before shipping assistant changes: **`npm run verify:chat-widget`** (clean `.next/` + `public/`, rebuild, **`GET /chat-widget.js` → 200**).
+Optional production-parity check before shipping assistant changes: **`npm run verify:chat-widget`** (clean `.next/` + `public/`, rebuild, **`GET /api/chat/widget` → 200**).
 
 ## Validation (backpressure)
 

@@ -219,7 +219,7 @@ Track concrete answers here or in Implementation plan—not only in ephemeral ch
 | Topic | Decision / notes |
 |-------|------------------|
 | Rollout | **[Phase A](#phase-a--ship-first-blocking)** first (KV + cookie + quota only). **[Phase B](#phase-b--later-explicit-opt-in)** (e.g. Supabase transcripts / operator queries) only after Phase A is complete — see `IMPLEMENTATION_PLAN.md`. |
-| Embed pattern | **Defer-loaded script** (`<script defer src="/chat-widget.js">`) — see `src/*.html`. |
+| Embed pattern | **Defer-loaded script** (`<script defer src="/api/chat/widget">`) — see `src/*.html`. |
 | Rate-limit store | **Vercel KV** or **Upstash Redis** (or compatible): atomic INCR per visitor-day key; document chosen vendor + env var names in README / `.env.example` when wired. |
 | Cookie signing | **HMAC** (or platform JWT) with server-only secret **`QUOTA_COOKIE_SECRET`** (name illustrative — document final name); rotation policy noted in IMPLEMENTATION_PLAN when live. |
 | Model provider / region | Operator choice; keys remain server-side only (`GOOGLE_*` / `OPENAI_*`). |

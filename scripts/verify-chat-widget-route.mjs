@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Production-parity check: clean build, confirm public/ has no chat-widget.js,
- * then GET /chat-widget.js from next start returns 200 + JS body.
+ * then GET /api/chat/widget from next start returns 200 + JS body.
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
@@ -81,7 +81,7 @@ async function main() {
 
   try {
     await waitForReady(`http://127.0.0.1:${port}/`);
-    const res = await fetch(`http://127.0.0.1:${port}/chat-widget.js`);
+    const res = await fetch(`http://127.0.0.1:${port}/api/chat/widget`);
     const text = await res.text();
     if (!res.ok) {
       console.error('[verify-chat-widget] FAIL: HTTP', res.status, text.slice(0, 200));

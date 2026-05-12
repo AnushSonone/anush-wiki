@@ -9,5 +9,4 @@ const publicDir = path.join(root, 'public');
 await fs.promises.mkdir(publicDir, { recursive: true });
 await fs.promises.cp(wikiSrc, publicDir, { recursive: true, force: true });
 
-/** `/chat-widget.js` is served only by `app/chat-widget.js/route.ts` (never copied here) so Next does not prefer a static file that may be missing on the CDN. */
-console.warn('sync-wiki: src/ → public/ (wiki static mirror only; assistant script is GET /chat-widget.js route)');
+console.warn('sync-wiki: src/ → public/ (wiki static mirror only; assistant script is GET /api/chat/widget)');

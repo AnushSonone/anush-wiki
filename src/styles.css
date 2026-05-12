@@ -521,7 +521,7 @@ body.page-blog::after {
   border-left: 2px solid var(--ink);
 }
 
-/* First-party wiki assistant — script: assistant/widget/chat-widget.js (synced → public/). specs/feature-assistant-chat.md */
+/* First-party wiki assistant — bundle URL: GET /api/chat/widget (app/api/chat/widget/route.ts). specs/feature-assistant-chat.md */
 .wiki-assistant {
   font: inherit;
   -webkit-tap-highlight-color: transparent;

@@ -2,11 +2,11 @@
 
 personal site: bio, blog, and contact — authored as plain html + css under `src/`.
 
-an optional defer-loaded `**/chat-widget.js**` + `**/api/chat**` route (spec’d in `[specs/feature-assistant-chat.md](specs/feature-assistant-chat.md)`) lets readers ask grounded questions via a corpus kept in-repo under `assistant/`. model keys stay on the server only.
+an optional defer-loaded script **`/api/chat/widget`** + `**/api/chat**` route (spec’d in `[specs/feature-assistant-chat.md](specs/feature-assistant-chat.md)`) lets readers ask grounded questions via a corpus kept in-repo under `assistant/`. model keys stay on the server only.
 
 ## preview locally — static wiki only (`src/` unchanged)
 
-pure html preview (no assistant script success — `/chat-widget.js` is not emitted by `python http.server src`):
+pure html preview (no assistant script success — `/api/chat/widget` is not emitted by `python http.server src`):
 
 ```bash
 cd src && python3 -m http.server 8080
@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors only **`src/*` → `public/`** (HTML/CSS assets). **`GET /chat-widget.js`** is served by **`app/chat-widget.js/route.ts`**, which reads **`assistant/widget/chat-widget.js`** — it is **not** copied into `public/` so Next never prefers a missing static file over that route. canonical wiki markup stays under `src/`; after editing the widget source, save **`assistant/widget/chat-widget.js`** and redeploy (or restart dev).
+open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors only **`src/*` → `public/`** (HTML/CSS assets). **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** from **`app/api/chat/widget/route.ts`** — it is **not** copied into `public/`. canonical wiki markup stays under `src/`; after editing the widget source, save **`assistant/widget/chat-widget.js`** and redeploy (or restart dev).
 
 ## secrets & kill-switch
 
@@ -42,4 +42,4 @@ constraints live in `**specs/design-philosophy-and-constraints.md**`. brief reca
 
 see also `[AGENTS.md](AGENTS.md)` for validation steps before committing.
 
-**Assistant bundle sanity (production parity, wipes `.next/` + `public/` then rebuilds):** run **`npm run verify:chat-widget`** — asserts **`GET /chat-widget.js`** is **200** and **`public/chat-widget.js` does not exist** after sync (script is served only by **`app/chat-widget.js/route.ts`**).
+**Assistant bundle sanity (production parity, wipes `.next/` + `public/` then rebuilds):** run **`npm run verify:chat-widget`** — asserts **`GET /api/chat/widget`** is **200** and **`public/chat-widget.js` does not exist** after sync (bundle is served only by **`app/api/chat/widget/route.ts`**).

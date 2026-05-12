@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    '/chat-widget.js/route': ['./assistant/**/*'],
+    '/api/chat/widget/route': ['./assistant/**/*'],
   },
   async headers() {
     return [
