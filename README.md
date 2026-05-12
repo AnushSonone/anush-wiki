@@ -31,14 +31,15 @@ content html/css lives under `src/`, but **`package.json`**, **`app/`**, **`midd
 in **project → settings → general**:
 
 1. **root directory** — leave **empty** (repo root). if this is set to **`src`**, vercel ignores root **`vercel.json`** / **`package.json`** and deploys static html only → **`/api/chat`** and **`/api/chat/widget`** return **`NOT_FOUND`**. healthy builds show **`Installing dependencies`** and **`next build`** in logs (minutes), not **`Build Completed in /vercel/output [18ms]`**.
-2. **framework preset** — **next.js**.
+2. **framework preset** — **next.js** (see **`vercel.json`** note below — **`builds` overrides dashboard settings**).
 3. **output directory** — leave **empty**. **never** point this at **`public`** unless you know what you’re doing: **`public/` is gitignored** and only appears **after** **`npm run build`** runs **`sync-wiki`**. if the build step is skipped (wrong framework / root) but output directory is still **`public`**, vercel ships **an empty folder** → **`NOT_FOUND` on `/`**, **`/api/*`**, everything. healthy logs show **`Installing dependencies`** + **`next build`** taking **~1–3+ minutes**, not **`Build Completed in /vercel/output [~100ms]`**.
-4. **build command** — **`npm run build`** (already the repo default via **`vercel.json`**).
+4. **install / build commands:** **`npm install`** then **`npm run build`** — duplicated in **`vercel.json`** so **`builds` deployments behave**.
+5. **`vercel.json` (`builds`):** **`{ "version": 2, "builds": [{ "src": "package.json", "use": "@vercel/next" }] }`** forces **`@vercel/next`**. zero‑config **`vercel build`** was resolving **`@vercel/static`** (~90 ms “build”, every route **`NOT_FOUND`**) even with **`framework: nextjs`**. once **`builds` exists, dashboard Build command / Install command overrides often **do not apply** — use **`vercel.json`** ([unused-build-settings](https://vercel.link/unused-build-settings)).
 
 ### production suddenly 404 everywhere
 
 1. **rollback:** **deployments** → open a recent deployment whose **preview URL** still returns **200** for **`/`** → **⋯ → promote to production** (or **instant rollback**).
-2. **fix settings:** clear **output directory** (empty field), **root directory** empty, **framework** next.js, then **redeploy** and confirm build logs include **`npm install`** and **`Creating an optimized production build`** from next.
+2. **fix settings:** clear **output directory** (empty field), **root directory** empty, save — **`builds`** in **`vercel.json`** drives **`npm install`/`npm run build`** → redeploy and confirm logs include **`Installing dependencies`** and **`Creating an optimized production build`**.
 
 ## secrets & kill-switch
 

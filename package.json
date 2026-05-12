@@ -4,8 +4,10 @@
   "scripts": {
     "sync-wiki": "node scripts/sync-wiki-public.mjs",
     "predev": "npm run sync-wiki",
+    "prebuild": "npm run sync-wiki",
+    "postinstall": "node scripts/sync-wiki-public.mjs",
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "npm run sync-wiki && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "verify:chat-widget": "node scripts/verify-chat-widget-route.mjs"

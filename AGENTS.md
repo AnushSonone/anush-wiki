@@ -49,7 +49,7 @@ npm run dev
 
 Open `http://127.0.0.1:3000/`. **`cd src && python …`** previews raw html/css only; **`/api/chat/widget`** resolves only on the Next server (`app/api/chat/widget/route.ts`), not from `src/` alone.
 
-**Vercel:** root directory must be **repository root** (not **`src/`**) so **`npm run build`** runs; see **`README.md` → deploy on vercel**. Instant **`Build Completed … [18ms]`** logs without **`next build`** mean api routes were never deployed.
+**Vercel:** **`README.md` → deploy on vercel** — **`vercel.json`** **`builds`** pins **`@vercel/next`**; plain **`framework`/`next`** alone resolved **`@vercel/static`** on **`vercel build`** (~instant logs = **`/` + `/api/*`** **`NOT_FOUND`**).
 
 Optional production-parity check before shipping assistant changes: **`npm run verify:chat-widget`** (clean `.next/` + `public/`, rebuild, **`GET /api/chat/widget` → 200**).
 
