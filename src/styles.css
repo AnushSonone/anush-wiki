@@ -205,17 +205,20 @@ body.page-blog::after {
 }
 
 .site-chrome__assistant-host {
-  justify-self: end;
-  align-self: start;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.site-chrome__assistant-host > .wiki-assistant__launcher-shell {
+  position: static;
 }
 
 @media (max-width: 28rem) {
   .site-chrome {
     grid-template-columns: 1fr;
-  }
-
-  .site-chrome__assistant-host {
-    justify-self: end;
   }
 }
 

@@ -1,6 +1,13 @@
 (() => {
   'use strict';
 
+  if (typeof window !== 'undefined' && window.__wikiAssistantBooted) {
+    return;
+  }
+  if (typeof window !== 'undefined') {
+    window.__wikiAssistantBooted = true;
+  }
+
   /** Prime HttpOnly quota cookie (Phase A) — fire-and-forget before first POST. */
   fetch('/api/chat', { method: 'GET', credentials: 'same-origin' }).catch(() => {});
 
@@ -124,16 +131,24 @@
 
   launcherShell.appendChild(launcher);
 
-  const mount = document.getElementById('wiki-agent-mount');
-  if (mount) {
-    mount.appendChild(launcherShell);
-  } else {
-    launcherShell.classList.add('wiki-assistant__launcher-shell--floating');
-    document.body.appendChild(launcherShell);
+  /** Static html includes `#wiki-agent-mount` in `site-chrome`; this script is loaded via `/api/chat/widget` and must attach after the node exists. */
+  function attachLauncherToDom() {
+    const mountEl = document.getElementById('wiki-agent-mount');
+    if (mountEl) {
+      mountEl.appendChild(launcherShell);
+    } else {
+      launcherShell.classList.add('wiki-assistant__launcher-shell--floating');
+      document.body.appendChild(launcherShell);
+    }
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(dialog);
   }
 
-  document.body.appendChild(backdrop);
-  document.body.appendChild(dialog);
+  function boot() {
+    attachLauncherToDom();
+    rerenderTranscript();
+  }
 
   function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (ch) => {
@@ -188,8 +203,6 @@
     });
     scrollLogToEnd();
   }
-
-  rerenderTranscript();
 
   function toggle(open) {
     const willOpen =
@@ -281,5 +294,11 @@
     status.textContent = '';
     status.hidden = true;
   });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 
 })();
