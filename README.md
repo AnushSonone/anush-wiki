@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors `src/*` → `public/` and copies `**assistant/widget/chat-widget.js**` → `**public/chat-widget.js**`. **`public/chat-widget.js` is tracked in git** (rest of `public/` stays ignored) so production always serves `/chat-widget.js`. canonical wiki markup stays under `src/`; after editing the widget source, run **`npm run sync-wiki`** and commit **`assistant/widget/chat-widget.js`** + **`public/chat-widget.js`** together.
+open `http://127.0.0.1:3000/`. `npm run dev` and `npm run build` run `sync-wiki`, which mirrors `src/*` → `public/` and copies `**assistant/widget/chat-widget.js**` → `**public/chat-widget.js**` for local static hosting parity. **`GET /chat-widget.js`** is implemented by **`app/chat-widget.js/route.ts`**, which reads **`assistant/widget/chat-widget.js`** so production always serves the script even when `public/` is incomplete on the CDN. canonical wiki markup stays under `src/`; after editing the widget source, run **`npm run sync-wiki`** when you want `public/` refreshed for local runs.
 
 ## secrets & kill-switch
 
