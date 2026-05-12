@@ -39,7 +39,6 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 - [x] **Wiki assistant specs:** Constitution exception (`design-philosophy-and-constraints.md`) + `specs/feature-assistant-chat.md` (embed boundary, quotas, corpus, defenses, CSP/a11y checklist).
 - [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); middleware `/`→`/index.html`; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
 - [x] **Assistant Phase A (quota):** KV / Upstash atomic daily cap (**50** completions per UTC day) + HMAC HttpOnly visitor cookie (`wiki_quota_vid`); follow-ups under Open → *Phase A verification*.
-- [x] **Assistant personality + corpus (prompt + knowledge pack):** `assistant/system-prompt.txt` voice rules; numbered `assistant/knowledge/*.txt` (site map, `about.html` résumé snapshot, college essay excerpt); client-only bootstrap greeting in widget; `CORPUS_REVISION` bumped; larger corpus budget in `/api/chat`.
 - [x] **Process:** Reconcile this file before every build (`AGENTS.md`, `PROMPT_build.md` 0e).
 
 ## Notes

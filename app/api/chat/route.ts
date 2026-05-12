@@ -12,6 +12,7 @@ import {
   QUOTA_COOKIE_NAME,
   verifyQuotaCookieValue,
 } from '../../../lib/quota-cookie';
+import { loadResumePdfPlain, loadWikiPlainSnapshot } from '../../../lib/published-context';
 import { quotaKey, releaseReservedSlot, reserveCompletionSlot, utcCalendarDate } from '../../../lib/quota-kv';
 import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
@@ -100,7 +101,7 @@ async function loadCorpusSnippet(maxChars: number): Promise<string> {
   let out = '';
   for (const name of files) {
     const fp = path.join(dir, name);
-    const chunk = clip((await fs.readFile(fp, 'utf8')).trim(), 11000);
+    const chunk = clip((await fs.readFile(fp, 'utf8')).trim(), 4000);
     if (!chunk) continue;
     out += `--- ${name} ---\n${chunk}\n\n`;
     if (out.length >= maxChars) break;
@@ -239,13 +240,16 @@ export async function POST(req: Request) {
 
   const corpusRevision = await loadTextFile(32, 'assistant', 'CORPUS_REVISION');
   const baseSystem = await loadTextFile(8000, 'assistant', 'system-prompt.txt');
-  const corpus = await loadCorpusSnippet(28000);
+  const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
+  const resumePdfPlain = await loadResumePdfPlain(8_000);
+  const corpus = await loadCorpusSnippet(4000);
 
   const systemWithContext = [
     baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
     corpusRevision ? `corpus_revision: ${corpusRevision}` : '',
-    'published excerpts (facts about the author must agree with these; if missing, abstain):\n'
-      + (corpus || '(no excerpts loaded.)'),
+    'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
+    'résumé pdf extract (plain text):\n' + resumePdfPlain,
+    'supplemental curated excerpts under assistant/knowledge/*.txt:\n' + (corpus || '(none loaded.)'),
   ]
     .filter(Boolean)
     .join('\n\n');

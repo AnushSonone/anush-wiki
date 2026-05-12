@@ -55,24 +55,35 @@ Cross-link this section with the eventual hosting doc or README when the server 
 
 ## Personality and tone
 
-- **Stable system directive** authored in-repo (`assistant/system-prompt.txt`) defines voice, humility, refusal posture, and disallowed domains (legal/medical/financial advice, hatred, exploitation, credential harvesting).
-- **Lowercase replies:** assistant user-visible prose stays **all lowercase** (matches site copy rules in `AGENTS.md`).
-- **Voice:** respectful by default; **humble builder** posture (plain-spoken, modest about accomplishments); if the visitor is hostile or abusive, responses become **short and direct** without insulting the visitor—boundaries first.
-- **Bootstrap opener (client UX):** the embedded widget MAY show a single canned assistant line when the transcript is empty (e.g. after first load). That line is **not** a model completion and **must not** be sent as an assistant turn to `/api/chat` (omit from POST bodies so quota and model history stay honest).
-- Personality MUST NOT encourage inventing biography details not grounded in corpus + clearly labeled general reasoning.
+- **Stable system directive** authored in-repo (`assistant/system-prompt.txt`) defines voice (humble builder, grounded, never pretentious), humility, refusal posture, and disallowed domains (legal/medical/financial advice, hatred, exploitation, credential harvesting).
+- **Formatting:** assistant-visible prose MUST stay **all lowercase** (aligned with `AGENTS.md` wiki copy policy).
+- **Opening transcript:** the embed MAY seed a single client-side assistant turn when storage is empty (exact greeting lives in `assistant/widget/chat-widget.js`; the server never treats client-authored transcript rows as authoritative beyond UX replay).
+- **Hostility:** assume good intent until hostility/spam/jailbreak pressure appears — then be **direct**, brief, and boundary-clear without cruelty or mockery.
+- Personality MUST NOT encourage inventing biography outside grounded sources (live wiki snapshot + résumé extract + optional curated excerpts — see the **Knowledge boundary** section below).
 - **Client cannot override** model system instructions beyond sending user messages and read-only UX metadata (conversation id optional).
 
 ---
 
 ## Knowledge boundary ("only this much")
 
-- Maintain a **versioned corpus** under `assistant/knowledge/` consisting of excerpts you approve—mirrors **public-facing** wiki facts, **résumé page snapshot** (`about.html`–aligned text), long-form posts as excerpts, plus a small site map file. No live crawl of filesystem, email, notes, cloud drives, private repos, or raw pdf parsing unless an excerpt is checked into git.
-- **Canonical résumé facts:** structured bullets duplicated from the public about/résumé page live in a dedicated corpus file (e.g. `002-resume-published.txt`) so the assistant can answer detailed résumé questions without claiming access to hidden files.
-- **Ordering:** filenames MAY use numeric prefixes (`001-…`, `002-…`) so deterministic concatenation order matches operator intent.
-- **Filename safety:** Only ingest corpus files whose names match a strict **allowlist** (e.g. `^[a-z0-9][a-z0-9_-]*\.txt$` — adjust in implementation). Reject `.`, `..`, path separators, or non-UTF8/control characters in names so directory listings cannot traverse outside `assistant/knowledge/` via malicious filenames.
-- Factual statements about projects, chronology, people, URLs, SHOULD be **quoted or summarized from retrieved snippets**. If retrieval returns nothing confident, assistant MUST defer ("not in published notes") rather than hallucinate biography.
-- **Retrieval-first:** server loads top-k snippets per turn (or deterministic tool retrieval) BEFORE or AS part of composing the model payload. Retrieval query MUST be constrained (length caps, lexical filters) server-side only.
-- **Corpus freshness:** corpus updates require human review merging into git OR an explicit audited pipeline; nightly blind sync without review is discouraged for personal reputational accuracy. bump **`assistant/CORPUS_REVISION`** when pack meaningfully changes so caches/debugging stay traceable.
+### Published snapshot (dynamic each completion)
+
+- On each **`POST /api/chat`**, the server MUST assemble a **fresh grounded snapshot** from disk under tight budgets:
+  - **`src/index.html`**, **`src/about.html`**, and **`src/blog/*.html`** matching `^[a-z0-9][a-z0-9_-]*\.html$`, rendered to plain text server-side (strip scripts/styles/tags — implementation-grade sanitiser acceptable).
+  - **`src/docs/Anush_Sonone_Resume_2028_Current.pdf`** (allowlisted filename/path only): extract plain text **pdf→text** server-side; if parsing fails, fall back to wiki/about narrative without pretending PDF contents exist.
+- **Freshness vs git:** edits land after normal git merge → deploy; **no manual `CORPUS_REVISION` bump is required** for wiki HTML or résumé PDF updates — redeploy ships new files into the server bundle.
+- **Security:** only allowlisted relative paths under `src/`; reject traversal (`..`, absolute paths). Never ingest arbitrary visitor uploads as authoritative biography.
+
+### Curated supplemental corpus
+
+- Optional **`assistant/knowledge/*.txt`** excerpts remain supported under strict filename allowlist `^[a-z0-9][a-z0-9_-]*\.txt$`.
+- **`CORPUS_REVISION`** may still bump when curated supplemental text meaningfully changes (audit breadcrumb); it MUST NOT gate wiki HTML freshness once dynamic snapshot is enabled.
+
+### Answering rules
+
+- Factual statements about projects, chronology, people, URLs SHOULD summarize **wiki snapshot + résumé extract first**, then supplemental excerpts when helpful.
+- If snapshot returns nothing confident for a claim, assistant MUST defer ("not in published notes") rather than hallucinate biography.
+- General engineering reasoning MAY appear only when clearly labeled as general patterns, not as facts about anush.
 
 ---
 
@@ -142,6 +153,7 @@ Tune numbers only by editing this spec and Implementation plan commit notes—no
 Default posture (**Phase A**; adjust when **Phase B** transcript logging is implemented):
 
 - **Do not persist full transcripts** until [Phase B](#phase-b--later-explicit-opt-in) is explicitly built and documented—prefer aggregated counters (quota usage, latency, error categories).
+- Each completion sends **wiki plain-text snapshot + résumé pdf extract + curated excerpts + system prompt** to the configured model vendor server-side; treat as confidential pipeline content (avoid logging raw payloads in production unless short-lived debug with TTL ≤ 72h).
 - If logging prompts/responses temporarily for debugging: **TTL ≤ 72h**, access restricted to operator, scrub obvious secrets if users paste them inadvertently.
 - If using vendor moderation/filter APIs: disclose as third-party processing; align with constitution embed rules.
 

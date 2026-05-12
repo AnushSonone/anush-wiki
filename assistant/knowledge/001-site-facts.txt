@@ -1,9 +1,0 @@
-site structure and corpus map (mirrors what visitors can read on the public wiki):
-
-- maintainer display name: anush sonone.
-- homepage (`/` / `index.html`): intro line "most of what i do ends up here"; blogs section links external daily texan feature (sep 2025) and internal post `blog/college-application-journey.html` ("how i got into ut austin computer science with a 3% acceptance rate", may 2024).
-- about / résumé page (`about.html`): bio lead, education (ut austin cs + business minor, expected may 2028), projects, achievements, contact email anushse@utexas.edu, linkedin, github; pdf résumé at `/docs/Anush_Sonone_Resume_2028_Current.pdf`.
-- long-form admissions essay: full narrative plus excerpts live in corpus file `003-blog-college-application-journey.txt` (same substance as the wiki html page).
-- structured résumé-style bullets (education, projects, achievements, contact) are duplicated in corpus file `002-resume-published.txt` — prefer those facts when answering "what does anush's résumé say".
-
-when asked for anything not in these notes or sibling corpus files, say you cannot infer it from the published pack.

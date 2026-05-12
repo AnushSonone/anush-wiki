@@ -4,10 +4,8 @@
   /** Prime HttpOnly quota cookie (Phase A) — fire-and-forget before first POST. */
   fetch('/api/chat', { method: 'GET', credentials: 'same-origin' }).catch(() => {});
 
-  const STORAGE_KEY = 'wiki-assistant-history-v1';
-  /** Shown in-transcript only; stripped before POST so APIs always start from real user turns. */
-  const BOOTSTRAP_ASSISTANT_GREETING =
-    "what's up man! nice to see you here :)";
+  const STORAGE_KEY = 'wiki-assistant-history-v2';
+  const GREETING = "what's up man! nice to see you here :)";
 
   const msgs = [];
 
@@ -32,10 +30,7 @@
   }
 
   if (msgs.length === 0) {
-    msgs.push({
-      role: 'assistant',
-      content: BOOTSTRAP_ASSISTANT_GREETING,
-    });
+    msgs.push({ role: 'assistant', content: GREETING });
     persist();
   }
 
@@ -47,9 +42,9 @@
     }
   }
 
-  const root = document.createElement('section');
-  root.className = 'wiki-assistant';
-  root.setAttribute('aria-label', "anush's agent");
+  const launcherShell = document.createElement('div');
+  launcherShell.className = 'wiki-assistant wiki-assistant__launcher-shell';
+  launcherShell.setAttribute('aria-label', "anush's agent");
 
   const launcher = document.createElement('button');
   launcher.type = 'button';
@@ -67,7 +62,7 @@
   backdrop.setAttribute('aria-hidden', 'true');
 
   const dialog = document.createElement('div');
-  dialog.className = 'wiki-assistant__dialog';
+  dialog.className = 'wiki-assistant wiki-assistant__dialog';
   dialog.id = 'wiki-assistant-dialog';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
@@ -88,10 +83,11 @@
   form.className = 'wiki-assistant__form';
   form.noValidate = true;
 
-  const textarea = document.createElement('textarea');
-  textarea.className = 'wiki-assistant__input';
-  textarea.rows = 3;
-  textarea.setAttribute(
+  const inputEl = document.createElement('input');
+  inputEl.type = 'text';
+  inputEl.className = 'wiki-assistant__input';
+  inputEl.placeholder = 'type here!';
+  inputEl.setAttribute(
     'aria-label',
     "message to anush's agent",
   );
@@ -116,9 +112,26 @@
   closeBtn.textContent = 'close';
 
   row.append(closeBtn, sendBtn);
-  form.append(textarea, row);
+
+  const compose = document.createElement('div');
+  compose.className = 'wiki-assistant__compose';
+  compose.append(inputEl, row);
+
+  form.append(compose);
   dialog.append(title, log, status, form);
-  root.append(launcher, backdrop, dialog);
+
+  launcherShell.appendChild(launcher);
+
+  const mount = document.getElementById('wiki-agent-mount');
+  if (mount) {
+    mount.appendChild(launcherShell);
+  } else {
+    launcherShell.classList.add('wiki-assistant__launcher-shell--floating');
+    document.body.appendChild(launcherShell);
+  }
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(dialog);
 
   function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (ch) => {
@@ -159,19 +172,6 @@
     log.scrollTop = log.scrollHeight;
   }
 
-  /** Omit synthetic opener so model payloads never lead with an assistant turn. */
-  function messagesForApi() {
-    const out = msgs.slice();
-    if (
-      out.length &&
-      out[0].role === 'assistant' &&
-      out[0].content === BOOTSTRAP_ASSISTANT_GREETING
-    ) {
-      out.shift();
-    }
-    return out;
-  }
-
   rerenderTranscript();
 
   function toggle(open) {
@@ -186,7 +186,7 @@
     backdrop.hidden = !willOpen;
 
     if (willOpen) {
-      textarea.focus({ preventScroll: true });
+      inputEl.focus({ preventScroll: true });
       return;
     }
 
@@ -207,10 +207,10 @@
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const text = textarea.value.trim();
+    const text = inputEl.value.trim();
     if (!text) return;
 
-    textarea.value = '';
+    inputEl.value = '';
     msgs.push({ role: 'user', content: text });
     persist();
     rerenderTranscript();
@@ -227,7 +227,7 @@
           Accept: 'application/json',
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ messages: messagesForApi() }),
+        body: JSON.stringify({ messages: msgs }),
       });
 
       const data = /** @type {Record<string, unknown>} */ (
@@ -263,5 +263,4 @@
     status.hidden = true;
   });
 
-  document.body.appendChild(root);
 })();
