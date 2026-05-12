@@ -32,8 +32,13 @@ in **project → settings → general**:
 
 1. **root directory** — leave **empty** (repo root). if this is set to **`src`**, vercel ignores root **`vercel.json`** / **`package.json`** and deploys static html only → **`/api/chat`** and **`/api/chat/widget`** return **`NOT_FOUND`**. healthy builds show **`Installing dependencies`** and **`next build`** in logs (minutes), not **`Build Completed in /vercel/output [18ms]`**.
 2. **framework preset** — **next.js**.
-3. **output directory** — leave **empty** (do not set **`public`** or **`out`** unless you intend static-only export).
+3. **output directory** — leave **empty**. **never** point this at **`public`** unless you know what you’re doing: **`public/` is gitignored** and only appears **after** **`npm run build`** runs **`sync-wiki`**. if the build step is skipped (wrong framework / root) but output directory is still **`public`**, vercel ships **an empty folder** → **`NOT_FOUND` on `/`**, **`/api/*`**, everything. healthy logs show **`Installing dependencies`** + **`next build`** taking **~1–3+ minutes**, not **`Build Completed in /vercel/output [~100ms]`**.
 4. **build command** — **`npm run build`** (already the repo default via **`vercel.json`**).
+
+### production suddenly 404 everywhere
+
+1. **rollback:** **deployments** → open a recent deployment whose **preview URL** still returns **200** for **`/`** → **⋯ → promote to production** (or **instant rollback**).
+2. **fix settings:** clear **output directory** (empty field), **root directory** empty, **framework** next.js, then **redeploy** and confirm build logs include **`npm install`** and **`Creating an optimized production build`** from next.
 
 ## secrets & kill-switch
 
