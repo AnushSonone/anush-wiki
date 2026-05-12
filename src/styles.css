@@ -83,7 +83,6 @@ a:visited {
   max-width: 37.5rem;
   margin: 0 auto;
   padding: 12vh 1.5rem 2rem;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -200,13 +199,14 @@ body.page-blog::after {
 
 .site-chrome {
   flex-shrink: 0;
-  margin-top: auto;
-  padding-top: 2rem;
+  --site-chrome-line-gap: 1.35rem;
+  margin-top: var(--site-chrome-line-gap);
+  padding-top: var(--site-chrome-line-gap);
   border-top: 1px solid var(--hairline);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   align-items: start;
-  gap: 1rem;
+  gap: 1rem 1.25rem;
 }
 
 .site-chrome__assistant-host {
@@ -225,9 +225,16 @@ body.page-blog::after {
   max-width: 100%;
 }
 
-@media (max-width: 28rem) {
+@media (max-width: 36rem) {
   .site-chrome {
     grid-template-columns: 1fr;
+  }
+
+  .site-chrome__assistant-host {
+    justify-self: start;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -274,6 +281,14 @@ body.page-blog::after {
 }
 
 .site-main > .section-block:last-of-type .contact-row {
+  margin-bottom: 0;
+}
+
+.site-main > .section-block:last-of-type .post-list li:last-child {
+  margin-bottom: 0;
+}
+
+.site-main.site-main--blog > .blog-article > :last-child {
   margin-bottom: 0;
 }
 
