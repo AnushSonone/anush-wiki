@@ -122,7 +122,20 @@ body.page-blog::after {
   font-weight: 700;
   line-height: 1.2;
   text-transform: lowercase;
+}
+
+.site-name:not(:has(a)) {
   cursor: default;
+}
+
+.site-name a:any-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-name a:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .site-nav {
@@ -776,6 +789,36 @@ body.page-blog::after {
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+/*
+ * Narrow viewports — full-viewport takeover, centered sheet, no stray bottom gutter:
+ * specs/feature-assistant-chat.md → "Responsive layout (mobile vs viewport)".
+ */
+@media (max-width: 36rem) {
+  .wiki-assistant__backdrop {
+    inset: 0;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  .wiki-assistant__dialog {
+    left: 50%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: min(82dvh, 34rem);
+  }
+}
+
+/* scroll lock while narrow overlay open — set on <html> from chat-widget.js */
+html.wiki-assistant-narrow-overlay-open body {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 

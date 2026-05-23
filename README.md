@@ -13,11 +13,21 @@ sorry about the **next.js** and **typescript** at the root. they are only here t
 | **`app/`** | next **app router**: `layout.tsx`; `app/api/chat/route.ts` (completions, quota, corpus assembly); `app/api/chat/widget/route.ts` (serves `assistant/widget/chat-widget.js`). |
 | **`lib/`** | server-only helpers: quota cookie signing, kv/redis usage, wiki/html stripping, pdf text for prompts. |
 | **`assistant/`** | `system-prompt.txt`, optional `knowledge/*.txt`, `CORPUS_REVISION`, and **`widget/chat-widget.js`** (vanilla js injected by the html—no react bundle on wiki pages). |
-| **`middleware.ts`** | request edge behavior aligned with how static paths should resolve. |
+| **`middleware.ts`** | **`matcher: ['/index.html']`** only — **`308`** redirect to **`/`** (never runs on **`/`**). home **`/`** uses **`next.config.ts` `rewrites.beforeFiles`** (**`/`** → **`/index.html`**). **`specs/build-and-request-pipeline.md`**. |
 | **`scripts/`** | `sync-wiki-public.mjs` mirrors `src/` → `public/`; `verify-chat-widget-route.mjs` is wired as `npm run verify:chat-widget` in `package.json` for deployment checks. |
-| **`specs/`** | normative design + assistant requirements (`design-philosophy-and-constraints.md`, `feature-assistant-chat.md`, page specs, etc.). |
+| **`specs/`** | normative design + assistant + **`build-and-request-pipeline.md`** (`design-philosophy-and-constraints.md`, `feature-assistant-chat.md`, `urls-and-canonical-paths.md`, page specs). |
 | **`vercel.json`** | forces the **next** builder so `/` and **`/api/*`** come from one **next build** (see file comments; mis-set dashboard “root” or “output” can break this). |
 
 server env names (model providers, quota cookie secret, kv/upstash, kill-switch) are listed in **`.env.example`** for operators wiring production or preview.
 
 for process and validation expectations, see **`AGENTS.md`**.
+
+### what you commit versus what installs generate
+
+| path | tracked in git? | purpose |
+|------|----------------|---------|
+| **`src/`** | yes | authoring source for wiki pages + stylesheet + static assets wired into the assistant snapshot. |
+| **`public/`**, **`.next/`**, **`node_modules/`** | no (ignored) | outputs from **`npm install`**, **`npm run sync-wiki`**, **`npm run build`** — do not hand-edit. |
+| **`.cursor/`**, **IDE project folders**, editor swap files | no | local machine noise; **`.cursor/`** is deliberately ignored per repo hygiene. |
+
+model keys + quota secrets belong only in **`.env.local`** or the deployment dashboard — track **`.env.example`** (names without values).

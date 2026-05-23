@@ -35,10 +35,12 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 - [x] **MFWS reskin:** White canvas, serif, system link colors + fallbacks, default heading sizes, disc lists, `#ccc` footer hairline.
 - [x] **Structure + content:** Two-page IA, column width, footer credit, résumé/about variants as in `src/`.
 - [x] **Scaffold:** Ralph loop (`loop.sh`, prompts, `AGENTS.md`).
-- [x] **Specs:** Praneel structure vs MFWS surface; constitution + page specs.
+- [x] **Specs:** Praneel structure vs MFWS surface; constitution + page specs; **`urls-and-canonical-paths.md`**, **`build-and-request-pipeline.md`** (sync-wiki → next; home **`/`** without redirect loops).
 - [x] **Wiki assistant specs:** Constitution exception (`design-philosophy-and-constraints.md`) + `specs/feature-assistant-chat.md` (embed boundary, quotas, corpus, defenses, CSP/a11y checklist).
-- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); middleware `/`→`/index.html`; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
+- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); **`next.config.ts` `beforeFiles`** rewrite **`/`** → **`/index.html`**; **`middleware`** **`308`** **`/index.html`** → **`/`** (**`matcher: ['/index.html']`** only — **`specs/build-and-request-pipeline.md`**); wiki nav **`href="/"`**; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
 - [x] **Assistant Phase A (quota):** KV / Upstash atomic daily cap (**50** completions per UTC day) + HMAC HttpOnly visitor cookie (`wiki_quota_vid`); follow-ups under Open → *Phase A verification*.
+- [x] **Assistant UX — mobile takeover:** Narrow viewports `(max-width: 36rem)` — full-viewport backdrop (`100dvh` / `-webkit-fill-available`), centered dialog, footer launcher anchor unchanged (`src/styles.css`, `assistant/widget/chat-widget.js`); spec: `feature-assistant-chat.md` responsive section.
+- [x] **Assistant voice:** Humble-builder system prompt tightened + server-side visitor `reply` lowercase normalization (`assistant/system-prompt.txt`, `app/api/chat/route.ts`).
 - [x] **Process:** Reconcile this file before every build (`AGENTS.md`, `PROMPT_build.md` 0e).
 
 ## Notes

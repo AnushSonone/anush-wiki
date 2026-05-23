@@ -40,6 +40,20 @@ function clip(input: string, max: number) {
   return `${input.slice(0, max)}…`;
 }
 
+/** Visitor-visible `reply` strings stay lowercase — specs/feature-assistant-chat.md. */
+function withVisitorLowercaseReply<B extends Record<string, unknown>>(body: B): B {
+  if (typeof body.reply !== 'string') return body;
+  return {
+    ...body,
+    reply: body.reply.trim().toLocaleLowerCase('en-US'),
+  };
+}
+
+/** JSON helper for payloads that MAY include assistant `reply` text. */
+function jsonAssistant(payload: Record<string, unknown>, init?: ResponseInit) {
+  return Response.json(withVisitorLowercaseReply(payload), init);
+}
+
 function safeProviderDetail(cause: unknown): string | undefined {
   if (cause instanceof Error) return clip(cause.message, 400);
   return undefined;
@@ -124,7 +138,7 @@ export async function GET(req: Request) {
     process.env.DISABLE_CHAT === '1' || process.env.DISABLE_CHAT === 'true' || process.env.DISABLE_CHAT === 'yes';
 
   if (disabled) {
-    return Response.json(
+    return jsonAssistant(
       { error: 'assistant_offline', reply: 'the assistant is temporarily offline.' },
       { status: 503 },
     );
@@ -136,7 +150,7 @@ export async function GET(req: Request) {
 
   const secret = process.env.QUOTA_COOKIE_SECRET?.trim();
   if (!secret) {
-    return Response.json(
+    return jsonAssistant(
       {
         error: 'quota_misconfigured',
         reply: 'assistant quota is not configured on this server.',
@@ -164,7 +178,7 @@ export async function POST(req: Request) {
     process.env.DISABLE_CHAT === '1' || process.env.DISABLE_CHAT === 'true' || process.env.DISABLE_CHAT === 'yes';
 
   if (disabled) {
-    return Response.json(
+    return jsonAssistant(
       { error: 'assistant_offline', reply: 'the assistant is temporarily offline.' },
       { status: 503 },
     );
@@ -184,7 +198,7 @@ export async function POST(req: Request) {
   const openaiKey = process.env.OPENAI_API_KEY?.trim();
 
   if (!googleKey && !openaiKey) {
-    return Response.json({
+    return jsonAssistant({
       reply:
         'no model api key on the server — set GOOGLE_GENERATIVE_AI_API_KEY (gemini) or OPENAI_API_KEY in .env.local (never commit secrets).',
     });
@@ -198,7 +212,7 @@ export async function POST(req: Request) {
   if (!bypassQuota) {
     const secret = process.env.QUOTA_COOKIE_SECRET?.trim();
     if (!secret) {
-      return Response.json(
+      return jsonAssistant(
         {
           error: 'quota_misconfigured',
           reply: 'assistant quota is not configured on this server.',
@@ -209,7 +223,7 @@ export async function POST(req: Request) {
 
     quotaRedis = getQuotaRedis();
     if (!quotaRedis) {
-      return Response.json(
+      return jsonAssistant(
         {
           error: 'quota_store_unconfigured',
           reply: 'assistant quota store is not configured.',
@@ -221,7 +235,7 @@ export async function POST(req: Request) {
     const rawCookie = parseCookieHeader(req.headers.get('cookie'), QUOTA_COOKIE_NAME);
     const verified = verifyQuotaCookieValue(rawCookie, secret);
     if (!verified.ok) {
-      return Response.json(
+      return jsonAssistant(
         {
           error: 'assistant_cookies_required',
           reply:
@@ -234,7 +248,7 @@ export async function POST(req: Request) {
     qKey = quotaKey(verified.visitorId, utcCalendarDate());
     const slot = await reserveCompletionSlot(quotaRedis, qKey);
     if (!slot.ok) {
-      return Response.json(
+      return jsonAssistant(
         {
           error: 'quota_exhausted',
           reply:
@@ -297,7 +311,7 @@ export async function POST(req: Request) {
     console.error('[api/chat] upstream failure', cause);
     const detail = safeProviderDetail(cause);
     const suffix = showDetail && detail ? ` (${detail})` : '';
-    return Response.json(
+    return jsonAssistant(
       {
         reply: `the model provider returned an error — try later or verify GOOGLE_* / OPENAI_* configuration.${suffix}`,
       },
@@ -306,5 +320,5 @@ export async function POST(req: Request) {
   }
 
   const reply = (textOut || '').trim() || '(empty model response)';
-  return Response.json({ reply });
+  return jsonAssistant({ reply });
 }

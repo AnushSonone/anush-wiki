@@ -12,6 +12,22 @@
   fetch('/api/chat', { method: 'GET', credentials: 'same-origin' }).catch(() => {});
 
   const STORAGE_KEY = 'wiki-assistant-history-v2';
+  /** Breakpoint matches `specs/feature-assistant-chat.md` responsive section + src/styles.css. */
+  function isNarrowAssistantViewport() {
+    return (
+      typeof window.matchMedia === 'function'
+      && window.matchMedia('(max-width: 36rem)').matches
+    );
+  }
+
+  function setNarrowOverlayPageLock(enabled) {
+    const on = !!enabled && isNarrowAssistantViewport();
+    document.documentElement.classList.toggle(
+      'wiki-assistant-narrow-overlay-open',
+      on,
+    );
+  }
+
   const GREETING = "hey! nice to see you here :)";
 
   const msgs = [];
@@ -154,6 +170,22 @@
 
   function boot() {
     attachLauncherToDom();
+
+    const mqAssistNarrow =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 36rem)')
+        : null;
+
+    if (mqAssistNarrow?.addEventListener) {
+      mqAssistNarrow.addEventListener('change', () =>
+        setNarrowOverlayPageLock(dialog.hidden !== true),
+      );
+    } else if (mqAssistNarrow && typeof mqAssistNarrow.addListener === 'function') {
+      mqAssistNarrow.addListener(() =>
+        setNarrowOverlayPageLock(dialog.hidden !== true),
+      );
+    }
+
     rerenderTranscript();
   }
 
@@ -224,12 +256,14 @@
     backdrop.hidden = !willOpen;
 
     if (willOpen) {
+      setNarrowOverlayPageLock(true);
       rerenderTranscript();
       inputEl.focus({ preventScroll: true });
       scrollLogToEnd();
       return;
     }
 
+    setNarrowOverlayPageLock(false);
     launcher.focus({ preventScroll: true });
   }
 
@@ -292,7 +326,8 @@
     } catch {
       msgs.push({
         role: 'assistant',
-        content: 'offline or blocked network — reload after starting `npm run dev`.',
+        content:
+          'offline or blocked network — reload after starting npm run dev.',
       });
     }
 

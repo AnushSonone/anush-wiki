@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
     '/api/chat/widget/route': ['./assistant/**/*'],
     '/api/chat/route': ['./assistant/**/*', './src/**/*'],
   },
+  /**
+   * Serve wiki home at `/` without an `app/page.tsx`. `beforeFiles` runs after
+   * middleware; keep `/` handling here — **not** middleware `rewrite` — so
+   * middleware can redirect `/index.html`→`/` without re-entrancy loops.
+   */
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: '/', destination: '/index.html' }],
+    };
+  },
   async headers() {
     return [
       {

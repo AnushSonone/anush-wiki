@@ -23,6 +23,10 @@ This spec is the **constitution** for the personal landing page. It translates t
 - **No render-blocking** resources other than the single stylesheet linked from core HTML pages. Assistant bundles MUST load with `defer`, `async`, or dynamic import patterns that do not block first paint of the article column (exact pattern in assistant spec).
 - Prefer a **single CSS file** unless a later spec splits concerns for maintenance.
 
+## Visitor-facing URLs (home)
+
+Deploy + internal links SHOULD keep the homepage visible as **`/`** in the address bar (not **`/index.html`**). Rules + **next pipeline** (**`middleware` matcher**, **`beforeFiles`** rewrite — no redirect loops): **`specs/urls-and-canonical-paths.md`**, **`specs/build-and-request-pipeline.md`**.
+
 ## Structure and semantics
 
 - Use **HTML5 semantic elements** (`header`, `main`, `footer`, `section`, `nav`, `article`, `ul`/`ol` as appropriate).
@@ -53,3 +57,4 @@ The site **satisfies** this spec when:
 1. Core pages’ shipped markup uses **semantic HTML + the global CSS** without extra frameworks. If the wiki assistant is enabled, `<script>`/`<iframe>` hooks MUST match [feature-assistant-chat.md](./feature-assistant-chat.md) (single feature, first-party boundary, no undocumented third-party widgets).
 2. Validator-smoke (manual or tool): no knowingly broken semantics that break AT (landmarks present, sensible heading order). Assistant surfaces MUST meet the accessibility requirements in `feature-assistant-chat.md`.
 3. `wc -c` on core HTML + `styles.css` is within the budget above or this spec documents a revised ceiling; assistant payloads are justified per `feature-assistant-chat.md`.
+4. Homepage URL presentation follows **`specs/urls-and-canonical-paths.md`** + **`specs/build-and-request-pipeline.md`** (canonical **`/`**; no **`/index.html`** in internal links; no infinite redirect regressions).

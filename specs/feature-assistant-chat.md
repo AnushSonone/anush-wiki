@@ -56,7 +56,7 @@ Cross-link this section with the eventual hosting doc or README when the server 
 ## Personality and tone
 
 - **Stable system directive** authored in-repo (`assistant/system-prompt.txt`) defines voice (humble builder, grounded, never pretentious), humility, refusal posture, and disallowed domains (legal/medical/financial advice, hatred, exploitation, credential harvesting).
-- **Formatting:** assistant-visible prose MUST stay **all lowercase** (aligned with `AGENTS.md` wiki copy policy).
+- **Formatting:** assistant-visible prose MUST stay **all lowercase** (aligned with `AGENTS.md` wiki copy policy). **`POST /api/chat`/`GET /api/chat` SHOULD normalize visitor-facing `reply` strings** — see [Voice (presentation)](#voice-presentation).
 - **Opening transcript:** the embed MAY seed a single client-side assistant turn when storage is empty (exact greeting lives in `assistant/widget/chat-widget.js`; the server never treats client-authored transcript rows as authoritative beyond UX replay).
 - **Hostility:** assume good intent until hostility/spam/jailbreak pressure appears — then be **direct**, brief, and boundary-clear without cruelty or mockery.
 - Personality MUST NOT encourage inventing biography outside grounded sources (live wiki snapshot + résumé extract + optional curated excerpts — see the **Knowledge boundary** section below).
@@ -186,6 +186,35 @@ Launcher and transcript MUST:
 Assistant response text SHOULD remain legible under 200% zoom.
 
 Copy on static pages MUST follow lowercase policy in HTML per `AGENTS.md`.
+
+---
+
+## Responsive layout (mobile vs viewport)
+
+Implementations SHOULD separate **narrow viewports** (match the wiki mobile chrome breakpoint — today `(max-width: 36rem)`) from wider layouts:
+
+### Mobile (narrow)
+
+- **Full-viewport takeover:** Opening the assistant shows a backdrop that fills the visible viewport **without a bright band (“white gap”)** under the chrome on mobile browsers. Prefer **`100dvh` / `-webkit-fill-available`**-style coverage with `position: fixed; inset: 0`, not a short `100vh`-only rectangle that clears before the Dynamic Island / gesture / address-bar edge on some Safari builds.
+- **Main content masked:** Treat the backdrop as replacing the readable page for as long as the dialog is open (dimmed/obscured). Optional: lock **`body`** scroll (`overflow: hidden`) while open on narrow viewports only, so rubber-band scrolling doesn’t reveal “empty” page behind.
+- **Dialog placement:** Panel is **centered** in the viewport (horizontal + vertical), not docked bottom-right like desktop.
+- **Launcher placement:** Launcher control stays in the **`#wiki-agent-mount` / footer chrome attachment** (`src/*.html`). Do **not** move it into the overlay container for layout fidelity; stacking order MAY keep it clickable while open **only if** UX requires it—the normative UX here is takeover + centered panel while the launcher stays in its **DOM / layout anchor** relative to the static page chrome.
+
+### Desktop (wide)
+
+- **Docked chrome:** Preserve the lighter-weight pattern: anchored panel (e.g. bottom-right alignment) consistent with mfws/simple utility UI; backdrop still optional but need not imitate mobile full takeover.
+
+Implementations SHOULD document breakpoint + class hooks in commits when changing **`src/styles.css`** or **`assistant/widget/chat-widget.js`**.
+
+---
+
+### Voice (presentation)
+
+Beyond [Personality and tone](#personality-and-tone):
+
+- **`assistant/system-prompt.txt`** defines the canonical **humble builder** persona; assistant-visible prose MUST be **all lowercase** (including headings-in-prose illusion—no slipped title case unless the quoted visitor text requires it).
+- Server responses that surface **`reply`** for visitors SHOULD be normalized to lowercase so quota / offline / upstream errors cannot drift into mixed case (`POST /api/chat`, `GET /api/chat`).
+- **Grounding posture:** Prefer short answers that **explicitly tie claims to wiki + pdf extract** (“in the wiki it says…” / “the résumé line is…”) rather than ornate filler; abstain cleanly when absent from published sources (`Knowledge boundary`).
 
 ---
 

@@ -1,7 +1,7 @@
 # Page: index (blog / home)
 
 **Topic:** `/` equivalent — `src/index.html`.  
-**Depends on:** [layout-and-style.md](./layout-and-style.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
+**Depends on:** [layout-and-style.md](./layout-and-style.md), [urls-and-canonical-paths.md](./urls-and-canonical-paths.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
 ## Purpose
 
@@ -19,7 +19,7 @@ Personal landing that foregrounds **writing / links**: name, navigation, short i
 
 ## Header row
 
-- Left: site name linking to `index.html`.
+- Left: site name linking to **`/`** (canonical home — see [urls-and-canonical-paths.md](./urls-and-canonical-paths.md)).
 - Right **`<nav aria-label="Primary">`** with at minimum **`about` → `about.html`** (relative). Styling = **MFWS** (serif, system links)—see visual spec.
 
 ## Intro

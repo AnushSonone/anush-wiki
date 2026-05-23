@@ -37,7 +37,7 @@ From repository root:
 cd src && python3 -m http.server 8080
 ```
 
-Open `http://127.0.0.1:8080/` (serves `index.html` by default).
+Open `http://127.0.0.1:8080/` (**`/`** resolves to **`index.html`** on most static servers; wiki nav uses **`href="/"`** for home — **`specs/urls-and-canonical-paths.md`**).
 
 ### Wiki + embedded assistant preview
 
@@ -47,7 +47,7 @@ Uses Next.js locally (mirrors `src/* → public/` automatically before `next dev
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/`. **`cd src && python …`** previews raw html/css only; **`/api/chat/widget`** resolves only on the Next server (`app/api/chat/widget/route.ts`), not from `src/` alone.
+Open `http://127.0.0.1:3000/`. **`/`** stays canonical inside next (**`beforeFiles`** rewrite **`/`** → **`/index.html`** — **`middleware` does not run on `/`**); explicit **`GET /index.html`** is **`308`** → **`/`** (**`matcher: ['/index.html']`** — **`specs/build-and-request-pipeline.md`**).
 
 **Vercel:** **`README.md` → deploy on vercel** — **`vercel.json`** **`builds`** pins **`@vercel/next`**; plain **`framework`/`next`** alone resolved **`@vercel/static`** on **`vercel build`** (~instant logs = **`/` + `/api/*`** **`NOT_FOUND`**).
 

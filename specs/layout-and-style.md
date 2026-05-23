@@ -2,7 +2,7 @@
 
 **Topic:** **Where** things sit on the page (praneelseth.com information architecture), plus **how little** CSS is allowed beyond [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
-**Depends on:** [design-philosophy-and-constraints.md](./design-philosophy-and-constraints.md), [reference-analysis-praneelseth.md](./reference-analysis-praneelseth.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
+**Depends on:** [design-philosophy-and-constraints.md](./design-philosophy-and-constraints.md), [urls-and-canonical-paths.md](./urls-and-canonical-paths.md) (canonical **`/`** for home and nav `<a>` targets), [reference-analysis-praneelseth.md](./reference-analysis-praneelseth.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
 ## Division of concerns
 

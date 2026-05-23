@@ -1,7 +1,7 @@
 # Page: about
 
 **Topic:** `/about` equivalent — `src/about.html`.  
-**Depends on:** [layout-and-style.md](./layout-and-style.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
+**Depends on:** [layout-and-style.md](./layout-and-style.md), [urls-and-canonical-paths.md](./urls-and-canonical-paths.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Single-page résumé / bio: **praneel section order**; **MFWS** typography and p
 
 ## Header row
 
-- Same **layout** as index. **`<nav>`** includes **`blog` → `index.html`** (relative).
+- Same **layout** as index. **`<nav>`** includes **`blog` → `/`** (canonical home — see [urls-and-canonical-paths.md](./urls-and-canonical-paths.md)).
 
 ## Section: Education
 
