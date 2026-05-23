@@ -69,8 +69,8 @@ Cross-link this section with the eventual hosting doc or README when the server 
 ### Published snapshot (dynamic each completion)
 
 - On each **`POST /api/chat`**, the server MUST assemble a **fresh grounded snapshot** from disk under tight budgets:
-  - **`src/index.html`**, **`src/about.html`**, and **`src/blog/*.html`** matching `^[a-z0-9][a-z0-9_-]*\.html$`, rendered to plain text server-side (strip scripts/styles/tags — implementation-grade sanitiser acceptable).
-  - **`src/docs/Anush_Sonone_Resume_2028_Current.pdf`** (allowlisted filename/path only): extract plain text **pdf→text** server-side; if parsing fails, fall back to wiki/about narrative without pretending PDF contents exist.
+  - **`src/index.html`** (landing) and **`src/blog/*.html`** (hub + posts where basenames match `^[a-z0-9][a-z0-9_-]*\.html$`), rendered to plain text server-side (strip scripts/styles/tags — implementation-grade sanitiser acceptable).
+  - **`src/docs/Anush_Sonone_Resume_2028_Current.pdf`** (allowlisted filename/path only): extract plain text **pdf→text** server-side; if parsing fails, fall back to wiki landing narrative without pretending PDF contents exist.
 - **Freshness vs git:** edits land after normal git merge → deploy; **no manual `CORPUS_REVISION` bump is required** for wiki HTML or résumé PDF updates — redeploy ships new files into the server bundle.
 - **Security:** only allowlisted relative paths under `src/`; reject traversal (`..`, absolute paths). Never ingest arbitrary visitor uploads as authoritative biography.
 

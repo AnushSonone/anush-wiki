@@ -8,12 +8,12 @@ sorry about the **next.js** and **typescript** at the root. they are only here t
 
 | area | role |
 |------|------|
-| **`src/`** | source of truth: `index.html`, `about.html`, `blog/*.html`, `styles.css`, assets, and the résumé pdf the server may ingest for context. |
+| **`src/`** | source of truth: **`index.html`** (landing), **`blog/index.html`** (hub), **`blog/*.html`** (posts), `styles.css`, assets, résumé pdf for assistant context. |
 | **`public/`** | **generated** mirror of `src/` for next’s static file serving. created by `scripts/sync-wiki-public.mjs` during install/build dev flows; **gitignored**. the chat widget is **not** dropped here—it is served at **`GET /api/chat/widget`**. |
 | **`app/`** | next **app router**: `layout.tsx`; `app/api/chat/route.ts` (completions, quota, corpus assembly); `app/api/chat/widget/route.ts` (serves `assistant/widget/chat-widget.js`). |
 | **`lib/`** | server-only helpers: quota cookie signing, kv/redis usage, wiki/html stripping, pdf text for prompts. |
 | **`assistant/`** | `system-prompt.txt`, optional `knowledge/*.txt`, `CORPUS_REVISION`, and **`widget/chat-widget.js`** (vanilla js injected by the html—no react bundle on wiki pages). |
-| **`middleware.ts`** | **`matcher: ['/index.html']`** only — **`308`** redirect to **`/`** (never runs on **`/`**). home **`/`** uses **`next.config.ts` `rewrites.beforeFiles`** (**`/`** → **`/index.html`**). **`specs/build-and-request-pipeline.md`**. |
+| **`middleware.ts`** | **`matcher`:** **`/index.html`**, **`/about.html`**, **`/blog/index.html`** — **`308`** cleanup to **`/`** / **`/blog/`**. **`next.config.ts` `rewrites.beforeFiles`:** **`/`** → **`index.html`**; **`/blog`** + **`/blog/`** → **`blog/index.html`** (static html; no `app/page.tsx`). **`specs/build-and-request-pipeline.md`**. |
 | **`scripts/`** | `sync-wiki-public.mjs` mirrors `src/` → `public/`; `verify-chat-widget-route.mjs` is wired as `npm run verify:chat-widget` in `package.json` for deployment checks. |
 | **`specs/`** | normative design + assistant + **`build-and-request-pipeline.md`** (`design-philosophy-and-constraints.md`, `feature-assistant-chat.md`, `urls-and-canonical-paths.md`, page specs). |
 | **`vercel.json`** | forces the **next** builder so `/` and **`/api/*`** come from one **next build** (see file comments; mis-set dashboard “root” or “output” can break this). |

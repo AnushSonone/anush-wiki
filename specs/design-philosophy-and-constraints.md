@@ -4,7 +4,7 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 ## Technology constraints
 
-- **HTML + CSS only** for the **core** pages (`index`, `about`, blog posts, shared stylesheet): no framework runtime shipped for ordinary reading chrome.
+- **HTML + CSS only** for the **core** pages (**`/` landing**, **`/blog/` hub**, long-form **`blog/*.html` posts**, shared stylesheet): no framework runtime shipped for ordinary reading chrome.
 - **Optional first-party assistant:** A single wiki assistant **may** add **first-party JavaScript** and a companion API **only** as defined in [feature-assistant-chat.md](./feature-assistant-chat.md). That spec defines **rollout phases** (**Phase A:** KV + signed-cookie quotas before optional transcript storage), **server-enforced daily caps**, **non-spoofable visitor identity**, **corpus containment**, and **no reliance on client-only rate limits**. No other scripts, WebAssembly bundles, or client-side assistants are permitted without amending this document again.
 - **No third-party embeds** (analytics, vendor chat widgets, tag managers, ad scripts, social SDKs) unless a spec explicitly names an exception and justifies payload impact. The wiki assistant MUST be hosted and controlled by you (same project or explicitly listed first-party origin); loading model-provider SDKs from a CDN MUST follow the CSP and SRI rules in `feature-assistant-chat.md`.
 - **No web font CDN** and no bundled `@font-face` unless a future spec explicitly allows it. Default: **serif** stack only (see visual language spec)—not sans/system-ui for primary copy.
@@ -13,12 +13,12 @@ This spec is the **constitution** for the personal landing page. It translates t
 
 ## IA vs visual (merged project)
 
-- **Praneelseth.com** supplies **structure only**: two-page IA, 600px column, header/nav placement, section order ([reference-analysis-praneelseth.md](./reference-analysis-praneelseth.md), [layout-and-style.md](./layout-and-style.md)).
+- **Praneelseth.com** supplies **structure only**: column width, header/nav placement, section cues ([reference-analysis-praneelseth.md](./reference-analysis-praneelseth.md), [layout-and-style.md](./layout-and-style.md)). **routing:** **`/`** = landing, **`/blog/`** = writing hub (+ posts under **`/blog/*.html`**).
 - **[motherfuckingwebsite.com](https://motherfuckingwebsite.com/)** supplies **look**: black on white, serif, system link colors, default heading hierarchy ([visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md)).
 
 ## Performance and weight
 
-- **Combined** byte size of `src/index.html` + `src/about.html` + `src/styles.css` (excluding optional local images not yet defined) SHOULD stay **under ~35 KiB** uncompressed as a soft budget. If content grows beyond, update this spec with a new ceiling and reason.
+- **Combined** byte size of **`src/index.html`** + **`src/blog/index.html`** + **`src/styles.css`** (excluding optional local images not yet defined) SHOULD stay **under ~35 KiB** uncompressed as a soft budget. If content grows beyond, update this spec with a new ceiling and reason.
 - Assistant JavaScript/CSS (if present) SHOULD have its **own documented soft ceiling** in [feature-assistant-chat.md](./feature-assistant-chat.md); it MUST NOT inflate the core trio above unless that spec merges bundles into the same files and adjusts the ceiling here accordingly.
 - **No render-blocking** resources other than the single stylesheet linked from core HTML pages. Assistant bundles MUST load with `defer`, `async`, or dynamic import patterns that do not block first paint of the article column (exact pattern in assistant spec).
 - Prefer a **single CSS file** unless a later spec splits concerns for maintenance.

@@ -15,7 +15,7 @@ This document captures **information architecture** and **spatial patterns** we 
 | `/` (index) | Name + top nav + short intro + **content/links list** + bottom chrome row. Nav → About. |
 | `/about` | Same header pattern; nav → home/blog; **Education → Contact** section stack. |
 
-Implementation: `src/index.html`, `src/about.html`, shared `styles.css`.
+Implementation: `src/index.html` (landing **`/`**), `src/blog/index.html` (**`/blog/`** hub), posts under `src/blog/*.html`, shared `styles.css`.
 
 ## Spatial layout (keep these)
 

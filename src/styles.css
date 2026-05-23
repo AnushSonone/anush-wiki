@@ -106,6 +106,22 @@ body.page-blog::after {
   margin-bottom: 2rem;
 }
 
+/*
+ * about hero: `.lead`→resume uses `.lead`'s `1.5rem` bottom margin (unchanged).
+ * resume→education: same `1.5rem`, but expressed as `.site-top--about` bottom
+ * padding (not `.resume-link` margin alone): in a column flex parent, the bottom
+ * margin of the hero's last child can collapse oddly and shrink the flex item,
+ * stacking the next `.section-block` atop the resume line.
+ */
+.site-top.site-top--about {
+  margin-bottom: 0;
+  padding-bottom: 1.5rem;
+}
+
+.site-top.site-top--about > .resume-link {
+  margin-bottom: 0;
+}
+
 .site-header-row {
   display: flex;
   flex-wrap: wrap;

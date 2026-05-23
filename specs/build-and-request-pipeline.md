@@ -33,8 +33,14 @@ next may **re-run middleware** after an internal **`rewrite`**. if middleware **
 
 **stable shape for this repo:**
 
-1. **`next.config.ts` `rewrites().beforeFiles`:** **`/` → `/index.html`** (internal; serves **`public/index.html`**). this is **not** done in middleware.
-2. **`middleware.ts`:** **`matcher: ['/index.html']` only** — **`308` redirect** to **`/`** so bookmarks to **`/index.html`** collapse to **`/`**. because **`matcher` does not include `/`**, middleware **does not run** on the **`/`** request, so the **`beforeFiles`** rewrite is **not** followed by a second middleware pass that would redirect again.
+1. **`next.config.ts` `rewrites().beforeFiles`:** internal rewrites to mirrored **`.html`** files (not done in middleware):
+   - **`/` → `/index.html`**
+   - **`/blog` → `/blog/index.html`** and **`/blog/` → `/blog/index.html`** — files under **`public/`** are **not** served as automatic directory indexes; without these, **`/blog`** is handled by the App Router and returns **404**.
+2. **`middleware.ts`:** **`matcher` array** — explicit **`.html`** bookmark cleanup only (**each `308` redirect**), **never** on **`/`** or **`/blog/`** themselves:  
+   - **`/index.html` → `/`**  
+   - **`/about.html` → `/`** (legacy bookmark)  
+   - **`/blog/index.html` → `/blog/`**  
+   Because those paths are excluded from **`matcher`**, **`beforeFiles`** rewrites are **not** followed by a conflicting second middleware pass (the failure mode that caused **`index.html`↔`/`** loops when rewrite + redirect both touched the same hop).
 
 **do not** combine **`next.config` `redirects()`** for **`/index.html` → `/`** with middleware **`rewrite`** **`/` → `/index.html`** in configurations that re-evaluate redirects on the rewritten path (dev has differed from prod); the split above avoids that class of bugs.
 
@@ -42,7 +48,7 @@ next may **re-run middleware** after an internal **`rewrite`**. if middleware **
 
 ## other routes
 
-- **`/about.html`**, **`/blog/*.html`**, styles, assets — served as static files from **`public/`** (mirrored from **`src/`**).
+- **`/blog/*.html`** (posts + **`blog/index.html`** hub), **`/docs/*`**, styles, favicon — served as static files from **`public/`** (mirrored from **`src/`**).
 - **`/api/chat`**, **`/api/chat/widget`** — app router handlers; keys and quota stay server-side per **`feature-assistant-chat.md`**.
 
 ---
@@ -56,5 +62,9 @@ next may **re-run middleware** after an internal **`rewrite`**. if middleware **
 ## acceptance (operator smoke)
 
 1. **`GET /`** → **200** html; **no** redirect chain.
-2. **`GET /index.html`** → **308** (or **301**) **location: /**; follow-up **`GET /`** → **200**.
-3. **`npm run dev`** and **`next start`** both behave the same for (1)–(2).
+2. **`GET /index.html`** → **308** **location: /**; follow-up **`GET /`** → **200**.
+3. **`GET /blog`** → **200** html (same document as **`/blog/`); **no** App Router **404**.
+4. **`GET /blog/`** → **200** html.
+5. **`GET /blog/index.html`** → **308** **location: /blog/**; follow-up **`GET /blog/`** → **200**.
+6. **`GET /about.html`** → **308** **location: /**.
+7. **`npm run dev`** and **`next start`** behave the same for **(1)–(6)**.

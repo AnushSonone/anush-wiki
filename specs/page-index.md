@@ -1,41 +1,40 @@
-# Page: index (blog / home)
+# Page: index — landing (home `/`)
 
-**Topic:** `/` equivalent — `src/index.html`.  
+**Topic:** **`/`** (canonical) — authored as **`src/index.html`** on disk.  
 **Depends on:** [layout-and-style.md](./layout-and-style.md), [urls-and-canonical-paths.md](./urls-and-canonical-paths.md), [visual-language-motherfuckingwebsite.md](./visual-language-motherfuckingwebsite.md).
 
 ## Purpose
 
-Personal landing that foregrounds **writing / links**: name, navigation, short intro, ordered list of entries, and bottom chrome—**structurally** like praneel; **visually** like MFWS.
+Résumé-style **first screen** readers hit at **`/`**: short intro + linked résumé PDF, structured sections (education, projects, achievements, contact), MFWS typography. **Writing / posts** live at the **blog hub** (`/blog/` — [`page-blog-hub.md`](./page-blog-hub.md)).
 
 ## Document title and meta
 
-- `<title>`: author’s display preference (may be lowercase to match praneel habit).
-- `<meta name="description">`: one short line.
+- `<title>`: author's display preference (may be lowercase to match habits).
+- `<meta name="description">`: one short line reflecting landing content.
 
 ## Semantics
 
-- **Exactly one `h1`** per page. **Recommended:** `h1` is the **site name** in the header row (matches MFWS habit of a clear top-level heading). The “posts” block uses **`h2`** next.
-- Alternatively, if the name is not an `h1`, include **one** `h1` elsewhere early in `<main>` and document in a comment—do not orphan heading levels.
+- **Exactly one `h1`** per page: **site name** in the header row.
+- Sections use **`h2`** headings (education, projects, achievements, contact) — **lowercase copy** matches project policy (`AGENTS.md`).
+- Résumé **`pdf`** hook near the hero (explicit link; same file referenced in **`contact`** as needed).
 
 ## Header row
 
-- Left: site name linking to **`/`** (canonical home — see [urls-and-canonical-paths.md](./urls-and-canonical-paths.md)).
-- Right **`<nav aria-label="Primary">`** with at minimum **`about` → `about.html`** (relative). Styling = **MFWS** (serif, system links)—see visual spec.
+- Left: site name linking **`href="/"`** (canonical — [urls-and-canonical-paths.md](./urls-and-canonical-paths.md)).
+- Right **`<nav aria-label="primary">`** MUST include **`blog` → `/blog/`** (blog hub listing). Styling follows MFWS (serif, system links).
+
+## Section order
+
+Follow praneel **structure** MFWS **surface**: intro + résumé link, education, projects, achievements, contact, then shared bottom chrome (`layout-and-style.md`).
 
 ## Intro
 
-- Single **`<p>`** (optional class for layout-only hooks). **No** forced small gray type: body text is **black serif** at default size per MFWS.
+One or more **`<p class="lead">`** (layout hook acceptable): black serif body, default sizes.
 
-## Post / links list
+## Contact
 
-- **`<section aria-labelledby="posts-heading">`** with **`h2 id="posts-heading"`** — heading text such as “Links & writing” or “Posts” in **normal title / sentence case**, **not** uppercase label styling.
-- **`<ul>`** of entries; **prefer visible bullets** per MFWS unless a narrow exception is documented.
-- Each **`<li>`** includes a **meaningful link**; optional **`<time datetime>`** and human date—**dates use the same ink as body text**, not muted gray.
+Mirrors **`contact`** semantics across the wiki: **`mailto:`**, SVG icon links (**`currentColor`**), **`resume`** **`<a>`** (`docs/Anush_Sonone_Resume_2028_Current.pdf` relative to site root authoring, or **`/docs/...`** URL form per [`urls-and-canonical-paths.md`](./urls-and-canonical-paths.md)).
 
-## Site footer chrome
+## Footer chrome
 
-- Structural two-slot row per [layout-and-style.md](./layout-and-style.md). Links use **system link colors**; attribution text is **body copy** (black), not gray “legalese” tone via color.
-
-## Content source
-
-- URLs and titles come from the author. Placeholders must be clearly marked in HTML comments until replaced.
+Structural two-slot chrome row (`layout-and-style.md`). Assistant mount id **`wiki-agent-mount`** when embed ships.

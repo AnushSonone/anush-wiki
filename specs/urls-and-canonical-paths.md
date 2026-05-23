@@ -2,47 +2,59 @@
 
 **Depends on:** [design-philosophy-and-constraints.md](./design-philosophy-and-constraints.md), [build-and-request-pipeline.md](./build-and-request-pipeline.md).
 
-normative presentation rules so the address bar stays simple (especially **no `/index.html` on home**) while files on disk remain plain `.html` for static authoring and previews.
+normative presentation rules so address bars stay predictable (especially **no `/index.html` on home** or **`/blog/index.html` on the blog hub**) while files on disk remain plain `.html` for static authoring and previews.
+
+## information architecture (routes)
+
+| visitor path | on-disk source (under `src/` → `public/`) | intent |
+|--------------|---------------------------------------------|--------|
+| **`/`** | **`index.html`** | résumé-style **landing** |
+| **`/blog/`** | **`blog/index.html`** | **blog hub** listing (posts + tiny intro) |
+| **`/blog/college-application-journey.html`** (and future `blog/*.html`) | same path | long posts |
+| **`/docs/...`**, **`/favicon.svg`**, etc. | mirrored static | assets + résumé pdf |
+
+**`/about.html`** is **not** authored anymore; **`308` → `/`** for old bookmarks (see **middleware** below).
 
 ## implementation notes (next.js)
 
-- **`next.config.ts` `rewrites().beforeFiles`:** internal **`/` → `/index.html`** (serves **`public/index.html`**). **do not** replace this with middleware **`rewrite`** **`/`** unless you re-validate the whole stack — middleware re-entrancy **`/`↔`/index.html`** caused **`ERR_TOO_MANY_REDIRECTS`**.
-- **`middleware.ts`:** **`matcher: ['/index.html']` only** + **`308`** redirect to **`/`**. middleware **does not run** on **`/`**, so **`beforeFiles`** is not fighting a second middleware pass.
-- **do not** use **`next.config` `redirects()`** **`/index.html`→`/`** together with middleware **`rewrite`** **`/`→`/index.html`** in this repo; **dev** can re-apply redirects after internal rewrites and loop.
-
----
+- **`next.config.ts` `rewrites().beforeFiles`:** internal rewrites (**not** **`middleware`** — see **`build-and-request-pipeline.md`**): **`/` → `/index.html`**; **`/blog` → `/blog/index.html`**; **`/blog/` → `/blog/index.html`**. Omitting blog rewrites yields **App Router 404** for **`/blog`** because **`public/`** has **no** automatic directory **`index.html`** mapping.
+- **`middleware.ts` matchers** (**`308` redirects** — never combine with looping **`rewrite` + `redirects()`** pairs on the rewritten path):  
+  - **`/index.html` → `/`**  
+  - **`/about.html` → `/`** (legacy)  
+  - **`/blog/index.html` → `/blog/`** (directory-style canonical)
 
 ## filenames on disk vs public paths
 
 | concern | rule |
 |---------|------|
-| **authoring** | home remains **`src/index.html`** on disk — same basename every static server understands for `npm run sync-wiki`, `python3 -m http.server`, and local file workflows. |
-| **mirrored build** | `scripts/sync-wiki-public.mjs` copies the same filenames into **`public/`** (gitignored). filenames are implementation detail readers need not see. |
-| **server / edge** | **`next.config.ts` `beforeFiles`** rewrites **`GET /`** → **`/index.html`** internally; **`middleware.ts`** redirects explicit **`GET /index.html`** → **`/`** (`308`). **must not** pair **`/`** middleware rewrite with **`/index.html`→`/`** `redirects()` or a second middleware pass on **`/index.html`** without the **`matcher`** split above — that pattern produced **`ERR_TOO_MANY_REDIRECTS`**. |
-
-other pages (**`about.html`**, **`blog/*.html`**) MAY keep `.html` in the path until clean-url rewrites ship; **this spec mandates** canonical home **`/` only**, not naked extensions for those routes.
+| **authoring** | landing stays **`src/index.html`**; blog hub is **`src/blog/index.html`**; post files stay **`src/blog/<slug>.html`**. |
+| **mirrored build** | **`scripts/sync-wiki-public.mjs`** copies **`src/`** → **`public/`** (`public/` gitignored). |
+| **visitor links** | use **`/`** + **`/blog/`** (+ post paths); avoid exposing raw **`*.html`** in internal **`href`** for home and hub. |
 
 ---
 
 ## internal links (`src/**/*.html`)
 
-- **home (`/`):** every `<a>` that targets home MUST use **`href="/"`** (root-absolute), not `index.html`, not `../index.html`, and not `/index.html` (avoid the redirect hop).
-- **site title / name (when linked):** same — **`href="/"`**.
+- **`/` (landing):** every `<a>` to the landing MUST use **`href="/"`** (not **`index.html`**, not **`/index.html`**).
+- **blog hub:** use **`href="/blog/"`** from any page including **`/`**.
+- **`/blog/` page:** **`home` → `/`**; post links authored as **`college-application-journey.html`** (same directory) or root-absolute **`/blog/...`** when clearer.
 - **skip links, fragment-only `href` values,** and machine URLs stay unchanged.
 
-rationale: root-absolute links work from **`/`**, **`/about.html`**, and **`/blog/...`** without path mistakes and keep the visible URL at **`/`** after navigation.
+rationale: root-absolute links work from **`/`**, **`/blog/`**, and **`/blog/post.html`** without `../` mistakes.
 
 ---
 
 ## acceptance
 
-1. opening **`https://<host>/`** shows home; the location bar does not need to show `index.html`.
-2. navigating to **`https://<host>/index.html`** ends as **`/`** (redirect).
-3. no committed wiki page links to **`index.html`** for home.
+1. **`GET /`** shows landing; location bar does not need **`index.html`**.
+2. **`GET /index.html`** → **`308`** → **`/`**; follow-up **`GET /`** → **200**.
+3. **`GET /blog/`** (or platform equivalent) shows blog hub; **`GET /blog/index.html`** → **`308`** → **`/blog/`**.
+4. **`GET /about.html`** → **`308`** → **`/`**.
+5. no committed wiki page links **`index.html`** for home or **`blog/index.html`** for the hub.
 
 ---
 
 ## operator notes
 
-- **static-only hosting** (no next): many hosts already map `/` → `index.html` without exposing it; if a host lists both `/` and `/index.html` as separate URLs, configure a host-level redirect to `/` to match this spec.
-- **assistant corpus** still ingests **`src/index.html`** by filename — that is unrelated to visitor-facing URLs.
+- **static-only hosting** (no next): many hosts map `/` → `index.html` and `/blog/` → `blog/index.html` without ugly URLs; align host redirects with this spec.
+- **assistant corpus** still ingests **`src/index.html`** and **`src/blog/*.html`** by path — visitor-facing URLs are independent.

@@ -42,7 +42,7 @@ export function htmlToPlainText(html: string): string {
 
 async function readWikiHtmlFiles(srcRoot: string): Promise<string[]> {
   const ordered: string[] = [];
-  const rootFiles = ['index.html', 'about.html'];
+  const rootFiles = ['index.html'];
 
   for (const name of rootFiles) {
     const fp = path.join(srcRoot, name);
@@ -58,7 +58,11 @@ async function readWikiHtmlFiles(srcRoot: string): Promise<string[]> {
   try {
     await fs.access(blogDir, fsConstants.R_OK);
     const names = await fs.readdir(blogDir);
-    const html = names.filter((n) => WIKI_HTML_RE.test(n)).sort((a, b) => a.localeCompare(b));
+    let html = names.filter((n) => WIKI_HTML_RE.test(n)).sort((a, b) => a.localeCompare(b));
+    /** Blog hub snapshot first when present (ordering only). */
+    if (html.includes('index.html')) {
+      html = ['index.html', ...html.filter((n) => n !== 'index.html')];
+    }
     for (const n of html) {
       ordered.push(path.join(blogDir, n));
     }
@@ -112,7 +116,7 @@ export async function loadResumePdfPlain(maxChars: number): Promise<string> {
   try {
     buf = await fs.readFile(abs);
   } catch {
-    return '(résumé pdf missing — rely on about.html in wiki snapshot.)';
+    return '(résumé pdf missing — rely on home page in wiki snapshot.)';
   }
 
   try {
@@ -120,6 +124,6 @@ export async function loadResumePdfPlain(maxChars: number): Promise<string> {
     const text = (parsed.text || '').replace(/\s+/g, ' ').trim();
     return clip(text, maxChars) || '(résumé pdf had no extractable text.)';
   } catch {
-    return '(résumé pdf could not be parsed — rely on about.html.)';
+    return '(résumé pdf could not be parsed — rely on home snapshot.)';
   }
 }

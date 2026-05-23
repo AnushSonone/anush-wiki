@@ -1,6 +1,6 @@
 # IMPLEMENTATION_PLAN
 
-Prioritized tasks for the static site (`src/`). **IA = praneel**; **visuals = MFWS** — see `specs/visual-language-motherfuckingwebsite.md`, `specs/layout-and-style.md`, `specs/page-index.md`, `specs/page-about.md`.
+Prioritized tasks for the static site (`src/`). **IA = praneel** (landing **`/`** + **`/blog/`** hub); **visuals = MFWS** — see `specs/visual-language-motherfuckingwebsite.md`, `specs/layout-and-style.md`, `specs/page-index.md`, `specs/page-blog-hub.md`, and `specs/page-about.md` (legacy stub).
 
 Wiki assistant (**optional**, first-party embed + API): architecture, quotas, corpus, injection defenses, CSP, and acceptance checks — `specs/feature-assistant-chat.md` (narrow exception in `specs/design-philosophy-and-constraints.md`).
 
@@ -31,13 +31,14 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 ## Done
 
 - [x] **Lowercase copy policy:** All visible HTML text lowercased; `AGENTS.md` documents rules + `scripts/lowercase_html_text.py` helper; `viewBox` preserved on SVG.
-- [x] **Blog:** Homepage **Blogs** section; `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
+- [x] **Blog:** **`/blog/`** hub (`blog/index.html`); `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
 - [x] **MFWS reskin:** White canvas, serif, system link colors + fallbacks, default heading sizes, disc lists, `#ccc` footer hairline.
-- [x] **Structure + content:** Two-page IA, column width, footer credit, résumé/about variants as in `src/`.
+- [x] **Structure + content:** Landing column + **`/blog/`** hub (`src/blog/index.html`), post pages, footer credit + résumé pdf path wired for assistant ingestion.
 - [x] **Scaffold:** Ralph loop (`loop.sh`, prompts, `AGENTS.md`).
 - [x] **Specs:** Praneel structure vs MFWS surface; constitution + page specs; **`urls-and-canonical-paths.md`**, **`build-and-request-pipeline.md`** (sync-wiki → next; home **`/`** without redirect loops).
 - [x] **Wiki assistant specs:** Constitution exception (`design-philosophy-and-constraints.md`) + `specs/feature-assistant-chat.md` (embed boundary, quotas, corpus, defenses, CSP/a11y checklist).
-- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); **`next.config.ts` `beforeFiles`** rewrite **`/`** → **`/index.html`**; **`middleware`** **`308`** **`/index.html`** → **`/`** (**`matcher: ['/index.html']`** only — **`specs/build-and-request-pipeline.md`**); wiki nav **`href="/"`**; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
+- [x] **Routing IA (may 2026):** Résumé-style landing at **`/`** (`src/index.html`); posts listing at **`/blog/`** (`src/blog/index.html`); legacy **`GET /about.html`** → **`308`** **`/`**; **`GET /blog/index.html`** → **`308`** **`/blog/`**. docs: `urls-and-canonical-paths.md`, `build-and-request-pipeline.md`, **`middleware.ts`** matcher trio.
+- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); **`next.config.ts` `beforeFiles`** rewrite **`/`** → **`/index.html`**; **`middleware`** **`308`** **`/index.html`**→**`/`, `/about.html`→`/`, `/blog/index.html`→`/blog/`** — **`specs/build-and-request-pipeline.md`**; wiki nav uses **`/`** + **`/blog/`** where applicable; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
 - [x] **Assistant Phase A (quota):** KV / Upstash atomic daily cap (**50** completions per UTC day) + HMAC HttpOnly visitor cookie (`wiki_quota_vid`); follow-ups under Open → *Phase A verification*.
 - [x] **Assistant UX — mobile takeover:** Narrow viewports `(max-width: 36rem)` — full-viewport backdrop (`100dvh` / `-webkit-fill-available`), centered dialog, footer launcher anchor unchanged (`src/styles.css`, `assistant/widget/chat-widget.js`); spec: `feature-assistant-chat.md` responsive section.
 - [x] **Assistant voice:** Humble-builder system prompt tightened + server-side visitor `reply` lowercase normalization (`assistant/system-prompt.txt`, `app/api/chat/route.ts`).

@@ -62,10 +62,10 @@ Run before any commit the user requested (or when handing off so they can commit
 2. **Payload sanity** (approximate, from repo root):
 
    ```bash
-   wc -c src/index.html src/about.html src/styles.css src/blog/college-application-journey.html
+   wc -c src/index.html src/blog/index.html src/styles.css src/blog/college-application-journey.html
    ```
 
-   If `about.html` or blog pages do not exist yet, omit those paths. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
+   If the hub path or blog pages do not exist yet, omit those paths. Combined size should stay within the budget in `specs/design-philosophy-and-constraints.md` unless a spec revises it.
 
    Track assistant JS/CSS bundle from source (`specs/feature-assistant-chat.md`); optionally:
 
@@ -100,7 +100,8 @@ If you run loops inside Cursor without a CLI pipe, manually paste `PROMPT_plan.m
 
 ## Codebase patterns
 
-- `src/index.html` — home.
-- `src/about.html` — résumé-style about page (per `specs/page-about.md`).
-- `src/blog/*.html` — long-form posts (e.g. `college-application-journey.html`).
-- `src/styles.css` — single global stylesheet linked from every HTML page (blog pages use `../styles.css`).
+- `src/index.html` — landing home **`/`** (résumé-style — per `specs/page-index.md`).
+- `src/blog/index.html` — blog hub **`/blog/`** (per `specs/page-blog-hub.md`).
+- `src/blog/*.html` — long-form posts (`college-application-journey.html`, etc.).
+- **Legacy bookmark:** **`/about.html`** redirects to **`/`** (middleware); do not resurrect **`src/about.html`** without updating `specs/urls-and-canonical-paths.md`.
+- `src/styles.css` — single global stylesheet linked from every HTML page (blog subtree uses `../styles.css`; hub uses **`../styles.css`** from **`blog/index.html`**).

@@ -13,13 +13,19 @@ const nextConfig: NextConfig = {
     '/api/chat/route': ['./assistant/**/*', './src/**/*'],
   },
   /**
-   * Serve wiki home at `/` without an `app/page.tsx`. `beforeFiles` runs after
-   * middleware; keep `/` handling here — **not** middleware `rewrite` — so
-   * middleware can redirect `/index.html`→`/` without re-entrancy loops.
+   * Static wiki routes use mirrored `.html` in `public/` (no root `app/page.tsx`).
+   * - `/` → `/index.html`
+   * - `/blog` and `/blog/` → `/blog/index.html` (otherwise `/blog` hits the App Router and 404s)
+   *
+   * Keep `/` rewrite here rather than middleware to avoid `/` vs `/index.html` redirect-loop regressions.
    */
   async rewrites() {
     return {
-      beforeFiles: [{ source: '/', destination: '/index.html' }],
+      beforeFiles: [
+        { source: '/', destination: '/index.html' },
+        { source: '/blog', destination: '/blog/index.html' },
+        { source: '/blog/', destination: '/blog/index.html' },
+      ],
     };
   },
   async headers() {

@@ -11,7 +11,7 @@
 | Routes, nav labels, section order, column width, vertical spacing blocks | **Praneel** ([reference analysis](./reference-analysis-praneelseth.md)) |
 | Colors, fonts, link styling, heading treatment, list bullets | **MFWS** ([visual language](./visual-language-motherfuckingwebsite.md)) |
 
-## Page shell (both pages)
+## Page shell (core wiki pages)
 
 - **`<main class="site-main">`** (or equivalent) wraps primary content (after skip-link).
 - **Width:** `max-width: 37.5rem` (600px); horizontal margin `auto`.
