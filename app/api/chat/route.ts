@@ -18,8 +18,8 @@ import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
-/** Cap per completion — two-sentence ceiling in system prompt; keep output telegraphic. */
-const ASSISTANT_MAX_OUTPUT_TOKENS = 256;
+/** Max completion tokens — keeps headroom for two full sentences; brevity comes from system prompt, not a tight cap (avoids mid-word cutoffs). */
+const ASSISTANT_MAX_OUTPUT_TOKENS = 1024;
 
 const bodySchema = z.object({
   messages: z
@@ -290,6 +290,7 @@ export async function POST(req: Request) {
 
   const systemWithContext = [
     baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
+    'output contract (every assistant turn): at most two finished sentences, each ending cleanly with . or ? (not cut off). prefer one sentence when the question is light or only needs a skim. if you are tight on space, drop extra detail earlier — never trail off mid-clause or start a third sentence.',
     corpusRevision ? `corpus_revision: ${corpusRevision}` : '',
     'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
     'résumé pdf extract (plain text):\n' + resumePdfPlain,
