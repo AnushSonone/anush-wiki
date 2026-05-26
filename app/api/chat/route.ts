@@ -18,8 +18,8 @@ import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
-/** Cap per completion — avoids runaway cost; raise in code (and note in spec) if needed. */
-const ASSISTANT_MAX_OUTPUT_TOKENS = 2048;
+/** Cap per completion — keeps replies short; raise in code (and note in spec) if needed. */
+const ASSISTANT_MAX_OUTPUT_TOKENS = 768;
 
 const bodySchema = z.object({
   messages: z
@@ -38,6 +38,19 @@ const CORPUS_TXT_RE = /^[a-z0-9][a-z0-9_-]*\.txt$/;
 function clip(input: string, max: number) {
   if (input.length <= max) return input;
   return `${input.slice(0, max)}…`;
+}
+
+/** Plain widget surface — unwrap accidental markdown emphasis from model output. */
+function stripAssistantMarkdownArtifacts(text: string): string {
+  let s = text;
+  for (let i = 0; i < 8; i++) {
+    const next = s
+      .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
+      .replace(/__([\s\S]*?)__/g, '$1');
+    if (next === s) break;
+    s = next;
+  }
+  return s;
 }
 
 /** Visitor-visible `reply` strings stay lowercase — specs/feature-assistant-chat.md. */
@@ -90,9 +103,18 @@ async function geminiViaGoogleSdk(
     history.shift();
   }
 
-  const chat = model.startChat({ history });
-  const result = await chat.sendMessage(last.content);
-  return result.response.text();
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(last.content);
+      return result.response.text();
+    } catch (e) {
+      lastErr = e;
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 450));
+    }
+  }
+  throw lastErr;
 }
 
 async function loadTextFile(limit: number, ...segments: string[]) {
@@ -319,6 +341,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const reply = (textOut || '').trim() || '(empty model response)';
+  const reply =
+    stripAssistantMarkdownArtifacts((textOut || '').trim()) || '(empty model response)';
   return jsonAssistant({ reply });
 }

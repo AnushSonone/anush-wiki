@@ -279,6 +279,28 @@
     toggle(false);
   });
 
+  /**
+   * One retry on 502/504 — provider or edge timeouts often succeed on a second try;
+   * route releases quota on failed inference so this does not double-count caps.
+   */
+  async function postChatWithRetry(payload) {
+    const opts = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    };
+    let res = await fetch('/api/chat', opts);
+    if (res.status === 502 || res.status === 504) {
+      await new Promise((r) => setTimeout(r, 650));
+      res = await fetch('/api/chat', opts);
+    }
+    return res;
+  }
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const text = inputEl.value.trim();
@@ -295,34 +317,31 @@
     scrollLogToEnd();
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ messages: msgs }),
-      });
-
-      const data = /** @type {Record<string, unknown>} */ (
-        await res.json().catch(() => ({}))
-      );
-      const reply =
-        typeof data.reply === 'string'
-          ? data.reply
-          : res.ok
-            ? '(no reply)'
-            : 'sorry — something broke while talking to the server.';
-
-      if (!res.ok) {
-        msgs.push({
-          role: 'assistant',
-          content: reply,
-        });
-      } else {
-        msgs.push({ role: 'assistant', content: reply });
+      const res = await postChatWithRetry({ messages: msgs });
+      const raw = await res.text().catch(() => '');
+      /** @type {Record<string, unknown>} */
+      let data = {};
+      try {
+        data = JSON.parse(raw || '{}');
+      } catch {
+        data = {};
       }
+      const trimmed =
+        typeof data.reply === 'string' ? data.reply.trim() : '';
+      const fallbackBadGateway =
+        'the gateway or model timed out — try sending your message again in a moment.';
+      let reply = trimmed;
+      if (!reply) {
+        reply = res.ok ? '(no reply)' : '';
+      }
+      if (!reply && !res.ok) {
+        reply =
+          res.status === 502 || res.status === 504
+            ? fallbackBadGateway
+            : 'sorry — something broke while talking to the server.';
+      }
+
+      msgs.push({ role: 'assistant', content: reply });
     } catch {
       msgs.push({
         role: 'assistant',
