@@ -18,8 +18,8 @@ import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
-/** Cap per completion — keeps replies short; raise in code (and note in spec) if needed. */
-const ASSISTANT_MAX_OUTPUT_TOKENS = 768;
+/** Cap per completion — enforces terse replies (~1–2 sentences); raise if spec allows longer defaults. */
+const ASSISTANT_MAX_OUTPUT_TOKENS = 384;
 
 const bodySchema = z.object({
   messages: z
