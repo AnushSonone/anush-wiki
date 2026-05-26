@@ -290,7 +290,7 @@ export async function POST(req: Request) {
 
   const systemWithContext = [
     baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
-    'output contract (every assistant turn): at most two finished sentences, each ending cleanly with . or ? (not cut off). prefer one sentence when the question is light or only needs a skim. if you are tight on space, drop extra detail earlier — never trail off mid-clause or start a third sentence.',
+    'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
     corpusRevision ? `corpus_revision: ${corpusRevision}` : '',
     'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
     'résumé pdf extract (plain text):\n' + resumePdfPlain,
