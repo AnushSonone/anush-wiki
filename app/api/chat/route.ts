@@ -2,7 +2,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { generateText } from 'ai';
 import type { LanguageModel } from 'ai';
-import { constants as fsConstants, promises as fs } from 'node:fs';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import {
@@ -31,9 +31,6 @@ const bodySchema = z.object({
     )
     .max(24),
 });
-
-/** Corpus filenames only — avoids traversal via malicious names (spec). */
-const CORPUS_TXT_RE = /^[a-z0-9][a-z0-9_-]*\.txt$/;
 
 function clip(input: string, max: number) {
   if (input.length <= max) return input;
@@ -127,31 +124,6 @@ async function loadTextFile(limit: number, ...segments: string[]) {
     if (code !== 'ENOENT') throw e;
     return '';
   }
-}
-
-async function loadCorpusSnippet(maxChars: number): Promise<string> {
-  const dir = path.join(process.cwd(), 'assistant', 'knowledge');
-  try {
-    await fs.access(dir, fsConstants.R_OK);
-  } catch {
-    return '';
-  }
-
-  const names = await fs.readdir(dir);
-  const files = names
-    .filter((n) => CORPUS_TXT_RE.test(n))
-    .sort((a, b) => a.localeCompare(b));
-
-  let out = '';
-  for (const name of files) {
-    const fp = path.join(dir, name);
-    const chunk = clip((await fs.readFile(fp, 'utf8')).trim(), 4000);
-    if (!chunk) continue;
-    out += `--- ${name} ---\n${chunk}\n\n`;
-    if (out.length >= maxChars) break;
-  }
-
-  return clip(out.trim(), maxChars);
 }
 
 /** Prime HttpOnly quota cookie before POST (Phase A). GET does not require KV. */
@@ -282,19 +254,15 @@ export async function POST(req: Request) {
     reservedSlot = true;
   }
 
-  const corpusRevision = await loadTextFile(32, 'assistant', 'CORPUS_REVISION');
-  const baseSystem = await loadTextFile(8000, 'assistant', 'system-prompt.txt');
+  const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
   const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
   const resumePdfPlain = await loadResumePdfPlain(8_000);
-  const corpus = await loadCorpusSnippet(4000);
 
   const systemWithContext = [
     baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
     'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
-    corpusRevision ? `corpus_revision: ${corpusRevision}` : '',
     'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
     'résumé pdf extract (plain text):\n' + resumePdfPlain,
-    'supplemental curated excerpts under assistant/knowledge/*.txt:\n' + (corpus || '(none loaded.)'),
   ]
     .filter(Boolean)
     .join('\n\n');

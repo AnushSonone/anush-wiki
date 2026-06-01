@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
     return config;
   },
   outputFileTracingIncludes: {
-    '/api/chat/widget/route': ['./assistant/**/*'],
-    '/api/chat/route': ['./assistant/**/*', './src/**/*'],
+    '/api/chat/widget/route': ['./assistant/chat-widget.js'],
+    '/api/chat/route': ['./lib/assistant-system-prompt.txt', './src/**/*'],
   },
   /**
    * Static wiki routes use mirrored `.html` in `public/` (no root `app/page.tsx`).

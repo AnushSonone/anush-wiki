@@ -70,7 +70,7 @@ Run before any commit the user requested (or when handing off so they can commit
    Track assistant JS/CSS bundle from source (`specs/feature-assistant-chat.md`); optionally:
 
    ```bash
-   wc -c assistant/widget/chat-widget.js
+   wc -c assistant/chat-widget.js
    ```
 
 

@@ -25,7 +25,6 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 #### Other assistant tasks
 
 - [ ] **Assistant — backend polish:** Streaming responses (`streamText`/SSE) optional; unify client-side error taxonomy; retries/backoff knobs per provider SLO.
-- [ ] **Assistant — corpus upkeep:** Expand `assistant/knowledge/*.txt`; adopt real retrieval/embeddings when pack grows (**current naive pack join is MVP**).
 - [ ] **Assistant — hardening review:** Tight CSP + richer security headers (`next.config`/edge) per checklist in `feature-assistant-chat.md`; scripted abuse drills; billing caps at provider dashboard.
 
 ## Done
@@ -40,10 +39,11 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 - [x] **Specs:** Praneel structure vs MFWS surface; constitution + page specs; **`urls-and-canonical-paths.md`**, **`build-and-request-pipeline.md`** (sync-wiki → next; home **`/`** without redirect loops).
 - [x] **Wiki assistant specs:** Constitution exception (`design-philosophy-and-constraints.md`) + `specs/feature-assistant-chat.md` (embed boundary, quotas, corpus, defenses, CSP/a11y checklist).
 - [x] **Routing IA (may 2026):** Résumé-style landing at **`/`** (`src/index.html`); posts listing at **`/blog/`** (`src/blog/index.html`); legacy **`GET /about.html`** → **`308`** **`/`**; **`GET /blog/index.html`** → **`308`** **`/blog/`**. docs: `urls-and-canonical-paths.md`, `build-and-request-pipeline.md`, **`middleware.ts`** matcher trio.
-- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/widget/chat-widget.js`** (route handler); **`next.config.ts` `beforeFiles`** rewrite **`/`** → **`/index.html`**; **`middleware`** **`308`** **`/index.html`**→**`/`, `/about.html`→`/`, `/blog/index.html`→`/blog/`** — **`specs/build-and-request-pipeline.md`**; wiki nav uses **`/`** + **`/blog/`** where applicable; **`/api/chat`**; `assistant/{system-prompt,CORPUS_REVISION,knowledge}`; readme + `.env.example`.
+- [x] **Assistant scaffold:** Next mirror (`npm run sync-wiki`): **`src/` only → `public/`** (wiki static mirror); **`GET /api/chat/widget`** serves **`assistant/chat-widget.js`**; **`/api/chat`** reads wiki + résumé + **`lib/assistant-system-prompt.txt`**; readme + `.env.example`.
 - [x] **Assistant Phase A (quota):** KV / Upstash atomic daily cap (**50** completions per UTC day) + HMAC HttpOnly visitor cookie (`wiki_quota_vid`); follow-ups under Open → *Phase A verification*.
-- [x] **Assistant UX — mobile takeover:** Narrow viewports `(max-width: 36rem)` — full-viewport backdrop (`100dvh` / `-webkit-fill-available`), centered dialog, footer launcher anchor unchanged (`src/styles.css`, `assistant/widget/chat-widget.js`); spec: `feature-assistant-chat.md` responsive section.
-- [x] **Assistant voice:** Humble-builder system prompt tightened + server-side visitor `reply` lowercase normalization (`assistant/system-prompt.txt`, `app/api/chat/route.ts`).
+- [x] **Assistant UX — mobile takeover:** Narrow viewports `(max-width: 36rem)` — full-viewport backdrop (`100dvh` / `-webkit-fill-available`), centered dialog, footer launcher anchor unchanged (`src/styles.css`, `assistant/chat-widget.js`).
+- [x] **Assistant voice:** Humble-builder system prompt in **`lib/assistant-system-prompt.txt`** + server-side visitor `reply` lowercase normalization (`app/api/chat/route.ts`).
+- [x] **Assistant trim:** **`assistant/`** holds widget only; dropped **`knowledge/`**, **`CORPUS_REVISION`**, and duplicate corpus excerpts (wiki html + résumé pdf are authoritative).
 - [x] **Process:** Reconcile this file before every build (`AGENTS.md`, `PROMPT_build.md` 0e).
 
 ## Notes

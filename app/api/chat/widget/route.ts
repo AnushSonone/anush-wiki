@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 /** Serves the wiki assistant bundle for `<script src="/api/chat/widget">` (avoids fragile `/chat-widget.js` App Router segments on some hosts). */
 export async function GET() {
-  const fp = path.join(process.cwd(), 'assistant', 'widget', 'chat-widget.js');
+  const fp = path.join(process.cwd(), 'assistant', 'chat-widget.js');
   const body = await readFile(fp, 'utf8');
   return new Response(body, {
     headers: {
