@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
   },
   /** Blog post legacy bookmarks → clean `/blog/<slug>` (see `lib/blog-post-slugs.ts`). */
   async redirects() {
-    return BLOG_POST_SLUGS.flatMap((slug) => {
+    const blogRedirects = BLOG_POST_SLUGS.flatMap((slug) => {
       const canonical = blogPostCanonicalPath(slug);
       return [
         { source: `/blog/${slug}.html`, destination: canonical, permanent: true },
@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
         { source: `/writing/${slug}`, destination: canonical, permanent: true },
       ];
     });
+
+    return [
+      ...blogRedirects,
+      { source: '/public/about/:file', destination: '/about/:file', permanent: true },
+    ];
   },
   async headers() {
     return [

@@ -7,7 +7,7 @@ Wiki assistant (**optional**, first-party embed + API): architecture, quotas, co
 ## Open (highest priority first)
 
 - [ ] **Proofread:** Confirm internship dates, GitHub username, résumé PDF URL.
-- [ ] **Deploy:** Host wiki + assistant (Next build from repo root per `README.md`; static-only export cannot serve `/api/chat`) and verify routes on production; remote images on the blog post load from anush.wiki.
+- [ ] **Deploy:** Host wiki + assistant (Next build from repo root per `README.md`; static-only export cannot serve `/api/chat`) and verify routes on production.
 
 ### Wiki assistant (remaining work)
 
@@ -31,6 +31,7 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 ## Done
 
 - [x] **Lowercase copy policy:** All visible HTML text lowercased; `AGENTS.md` documents rules + `scripts/lowercase_html_text.py` helper; `viewBox` preserved on SVG.
+- [x] **Blog images:** **`src/about/`** assets; post **`img`** uses **`/about/...`**; legacy **`/public/about/*`** **`308`** → **`/about/*`**.
 - [x] **Blog clean URLs:** canonical **`/blog/<slug>`**; **`next.config.ts`** redirects legacy **`/<slug>.html`**, **`/blog/<slug>.html`**, **`/<slug>`**, **`/writing/<slug>`**; internal links use clean paths; slugs in **`lib/blog-post-slugs.ts`**.
 - [x] **Blog:** **`/blog/`** hub (`blog/index.html`); `blog/college-application-journey.html` from anush.wiki; images hotlinked with lazy loading.
 - [x] **MFWS reskin:** White canvas, serif, system link colors + fallbacks, default heading sizes, disc lists, `#ccc` footer hairline.
