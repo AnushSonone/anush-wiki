@@ -63,39 +63,42 @@
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://www.visa.com/en-us/solutions/visa-protect/issuers" rel="noopener noreferrer" target="_blank">@visa</a>
-              — designed a langgraph-based onboarding agent that turns plain-english
-              requests into fully provisioned iam users; implemented a pgvector service
-              recommender over 403k enrollment records, reaching 91% top-1 accuracy; and
-              built a redis streams notification pipeline with retries and dead-lettering,
-              pushing 16k+ status updates to teams.</span>
+              — built langgraph workflows to auto-provision users from admin requests,
+              cutting setup time by 97% for 2k+ users; architected a postgres-backed
+              knowledge graph for entitlement routing, grounding claude intent to typed
+              edges; and implemented a redis streams pipeline with retries and
+              dead-lettering, pushing notifications at a 99.9% success rate.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://www.afterquery.com/" rel="noopener noreferrer" target="_blank">@afterquery (yc w25)</a>
-              — built evaluation pipelines to benchmark manus ai tool calls (function
-              selection, argument parsing, retry logic) with python harnesses scoring
-              tool-call success against deterministic ground truths, funneling failure-mode
-              reports into agent retraining at 2m+ user scale.</span>
+              — designed evaluation pipelines to benchmark manus ai tool-call selection,
+              arguments, and retries across 10 domains; developed python harnesses to
+              measure tool-call success against deterministic ground truths and
+              diff-based scores; and drove eval data and failure-mode logs into agent
+              retraining, refining tool-call accuracy by 18% at a 2m+ user scale.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://profluento.dev/" rel="noopener noreferrer" target="_blank">@profluento ai</a>
-              — acquired $100k+ in data grants and backing from lvlup ventures; launched a
-              scoring engine for 15+ firms, surfacing 150+ verified high-net-worth leads;
-              and integrated ai outreach workflows that lifted lead conversion from
-              1–3% to 8–10%.</span>
+              — raised $100k and engineered a lead scoring engine to surface
+              high-net-worth prospects for wealth management firms; scored profiles with
+              a node.js weighted-matrix model over 10+ normalized signals, leading to
+              150+ verified clients; and routed jobs through cloudflare queues with
+              region-local kv caching, cutting paid profile enrichments by 80%.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://fortellis.io/" rel="noopener noreferrer" target="_blank">@cdk global</a>
               — led implementation of cdk iam's "super admin" role, granting full iam
-              control across 44k+ dealerships; shipped per-request authorization with
+              control across 44k+ dealerships; deployed per-request authorization with
               node.js apis and dynamodb schemas; and integrated audit logging and change
               tracking for 10k+ role updates/week.</span>
 </p>
 <p class="project-line">
-<span class="project-body"><a class="project-name" href="https://profluento.dev/" rel="noopener noreferrer" target="_blank">wealth manager lead scoring engine</a>
-              — built the lead-scoring core of profluento ai: a modular node.js weighted-sum
-              model over 10+ normalized signals, routed through cloudflare queue jobs with
-              region-local kv caching to cut paid api calls by 80%, and persisted to
-              supabase with retry logic and job-state tracking.</span>
+<span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/kill-my-cluster" rel="noopener noreferrer" target="_blank">killmycluster: a self-healing raft-based kv</a>
+              — created a fault-tolerant raft kv store with crash-safe wal snapshots,
+              grpc replication, and exactly-once applies; implemented majority-quorum
+              leader election and log catch-up, recovering from sudden leader failure
+              within 10s; and sustained 1.5k+ replicated writes/s and 10k+ reads/s under
+              load while keeping commit-index in lockstep.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://devpost.com/software/a-wnbv1p" rel="noopener noreferrer" target="_blank">lapsynk: formula 1 ai copilot</a>
