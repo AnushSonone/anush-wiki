@@ -18,8 +18,12 @@ import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
-/** Max completion tokens — keeps headroom for two full sentences; brevity comes from system prompt, not a tight cap (avoids mid-word cutoffs). */
-const ASSISTANT_MAX_OUTPUT_TOKENS = 1024;
+/**
+ * Visible reply budget. Gemini 2.5 counts *thinking* tokens against this cap too —
+ * keep headroom high and set thinkingBudget: 0 below so short wiki answers are not
+ * truncated mid-clause (finishReason MAX_TOKENS).
+ */
+const ASSISTANT_MAX_OUTPUT_TOKENS = 2048;
 
 const bodySchema = z.object({
   messages: z
@@ -64,9 +68,13 @@ function jsonAssistant(payload: Record<string, unknown>, init?: ResponseInit) {
   return Response.json(withVisitorLowercaseReply(payload), init);
 }
 
-function safeProviderDetail(cause: unknown): string | undefined {
-  if (cause instanceof Error) return clip(cause.message, 400);
-  return undefined;
+/** Log-only — never append provider/stack text to visitor-facing replies. */
+function logUpstreamFailure(cause: unknown) {
+  if (cause instanceof Error) {
+    console.error('[api/chat] upstream failure', clip(cause.message, 400));
+    return;
+  }
+  console.error('[api/chat] upstream failure', cause);
 }
 
 async function geminiViaGoogleSdk(
@@ -76,18 +84,25 @@ async function geminiViaGoogleSdk(
   turns: Array<{ role: 'user' | 'assistant'; content: string }>,
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
+  /** thinkingConfig is supported by Gemini 2.5+; older SDK typings omit it. */
+  const generationConfig = {
+    maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
+    temperature: 0.6,
+    thinkingConfig: { thinkingBudget: 0 },
+  };
   const model = genAI.getGenerativeModel({
     model: modelId,
     systemInstruction: systemWithContext,
-    generationConfig: {
-      maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
-      temperature: 0.6,
+    // Cast: @google/generative-ai typings lag Gemini 2.5 thinkingConfig.
+    generationConfig: generationConfig as typeof generationConfig & {
+      maxOutputTokens: number;
+      temperature: number;
     },
   });
 
   const last = turns[turns.length - 1];
   if (!last || last.role !== 'user') {
-    return '(nothing to answer — send a user message first.)';
+    return '(nothing to answer. send a user message first.)';
   }
 
   const history = turns.slice(0, -1).map((m) => ({
@@ -105,7 +120,11 @@ async function geminiViaGoogleSdk(
     try {
       const chat = model.startChat({ history });
       const result = await chat.sendMessage(last.content);
-      return result.response.text();
+      const text = (result.response.text() || '').trim();
+      if (!text) {
+        throw new Error('empty_model_text');
+      }
+      return text;
     } catch (e) {
       lastErr = e;
       if (attempt === 0) await new Promise((r) => setTimeout(r, 450));
@@ -147,7 +166,7 @@ export async function GET(req: Request) {
     return jsonAssistant(
       {
         error: 'quota_misconfigured',
-        reply: 'assistant quota is not configured on this server.',
+        reply: 'the assistant is temporarily offline.',
       },
       { status: 503 },
     );
@@ -168,149 +187,165 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const disabled =
-    process.env.DISABLE_CHAT === '1' || process.env.DISABLE_CHAT === 'true' || process.env.DISABLE_CHAT === 'yes';
-
-  if (disabled) {
-    return jsonAssistant(
-      { error: 'assistant_offline', reply: 'the assistant is temporarily offline.' },
-      { status: 503 },
-    );
-  }
-
-  let parsed: z.infer<typeof bodySchema>;
-  try {
-    parsed = bodySchema.parse(await req.json());
-  } catch {
-    return Response.json({ error: 'invalid_body' }, { status: 422 });
-  }
-
-  const googleKey =
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim()
-    ?? process.env.GEMINI_API_KEY?.trim();
-
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
-
-  if (!googleKey && !openaiKey) {
-    return jsonAssistant({
-      reply:
-        'no model api key on the server — set GOOGLE_GENERATIVE_AI_API_KEY (gemini) or OPENAI_API_KEY in .env.local (never commit secrets).',
-    });
-  }
-
-  const bypassQuota = isQuotaBypassDev();
   let quotaRedis = null as ReturnType<typeof getQuotaRedis>;
   let qKey: string | undefined;
   let reservedSlot = false;
 
-  if (!bypassQuota) {
-    const secret = process.env.QUOTA_COOKIE_SECRET?.trim();
-    if (!secret) {
-      return jsonAssistant(
-        {
-          error: 'quota_misconfigured',
-          reply: 'assistant quota is not configured on this server.',
-        },
-        { status: 503 },
-      );
-    }
-
-    quotaRedis = getQuotaRedis();
-    if (!quotaRedis) {
-      return jsonAssistant(
-        {
-          error: 'quota_store_unconfigured',
-          reply: 'assistant quota store is not configured.',
-        },
-        { status: 503 },
-      );
-    }
-
-    const rawCookie = parseCookieHeader(req.headers.get('cookie'), QUOTA_COOKIE_NAME);
-    const verified = verifyQuotaCookieValue(rawCookie, secret);
-    if (!verified.ok) {
-      return jsonAssistant(
-        {
-          error: 'assistant_cookies_required',
-          reply:
-            'this assistant needs first-party cookies for fair daily limits. allow cookies for this site, reload, then try again.',
-        },
-        { status: 403 },
-      );
-    }
-
-    qKey = quotaKey(verified.visitorId, utcCalendarDate());
-    const slot = await reserveCompletionSlot(quotaRedis, qKey);
-    if (!slot.ok) {
-      return jsonAssistant(
-        {
-          error: 'quota_exhausted',
-          reply:
-            'you have reached the daily limit for this assistant (50 replies per utc day). try again after midnight utc.',
-        },
-        { status: 429 },
-      );
-    }
-    reservedSlot = true;
-  }
-
-  const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
-  const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
-  const resumePdfPlain = await loadResumePdfPlain(8_000);
-
-  const systemWithContext = [
-    baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
-    'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
-    'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
-    'résumé pdf extract (plain text):\n' + resumePdfPlain,
-  ]
-    .filter(Boolean)
-    .join('\n\n');
-
-  const safeTurns = parsed.messages.slice(-18).map((m) => ({
-    role: m.role as 'user' | 'assistant',
-    content: clip(m.content, 8000),
-  }));
-
-  const showDetail =
-    process.env.NODE_ENV === 'development'
-    || process.env.DEBUG_CHAT_ERRORS === '1'
-    || process.env.DEBUG_CHAT_ERRORS === 'true';
-
-  let textOut: string;
   try {
-    if (googleKey) {
-      const modelId = process.env.GOOGLE_AI_MODEL?.trim() || 'gemini-2.5-flash';
-      textOut = await geminiViaGoogleSdk(googleKey, modelId, systemWithContext, safeTurns);
-    } else {
-      const openai = createOpenAI({ apiKey: openaiKey as string });
-      const openaiModel = openai.chat(process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini');
-      const { text } = await generateText({
-        model: openaiModel as unknown as LanguageModel,
-        system: systemWithContext,
-        messages: safeTurns,
-        maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
-        temperature: 0.6,
-        maxRetries: 1,
-      });
-      textOut = text;
+    const disabled =
+      process.env.DISABLE_CHAT === '1' || process.env.DISABLE_CHAT === 'true' || process.env.DISABLE_CHAT === 'yes';
+
+    if (disabled) {
+      return jsonAssistant(
+        { error: 'assistant_offline', reply: 'the assistant is temporarily offline.' },
+        { status: 503 },
+      );
     }
+
+    let parsed: z.infer<typeof bodySchema>;
+    try {
+      parsed = bodySchema.parse(await req.json());
+    } catch {
+      return jsonAssistant(
+        { error: 'invalid_body', reply: 'that message could not be read. try sending it again.' },
+        { status: 422 },
+      );
+    }
+
+    const googleKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim()
+      ?? process.env.GEMINI_API_KEY?.trim();
+
+    const openaiKey = process.env.OPENAI_API_KEY?.trim();
+
+    if (!googleKey && !openaiKey) {
+      return jsonAssistant(
+        {
+          error: 'model_unconfigured',
+          reply: 'the assistant is temporarily offline.',
+        },
+        { status: 503 },
+      );
+    }
+
+    const bypassQuota = isQuotaBypassDev();
+
+    if (!bypassQuota) {
+      const secret = process.env.QUOTA_COOKIE_SECRET?.trim();
+      if (!secret) {
+        return jsonAssistant(
+          {
+            error: 'quota_misconfigured',
+            reply: 'the assistant is temporarily offline.',
+          },
+          { status: 503 },
+        );
+      }
+
+      quotaRedis = getQuotaRedis();
+      if (!quotaRedis) {
+        return jsonAssistant(
+          {
+            error: 'quota_store_unconfigured',
+            reply: 'the assistant is temporarily offline.',
+          },
+          { status: 503 },
+        );
+      }
+
+      const rawCookie = parseCookieHeader(req.headers.get('cookie'), QUOTA_COOKIE_NAME);
+      const verified = verifyQuotaCookieValue(rawCookie, secret);
+      if (!verified.ok) {
+        return jsonAssistant(
+          {
+            error: 'assistant_cookies_required',
+            reply:
+              'this assistant needs first-party cookies for fair daily limits. allow cookies for this site, reload, then try again.',
+          },
+          { status: 403 },
+        );
+      }
+
+      qKey = quotaKey(verified.visitorId, utcCalendarDate());
+      const slot = await reserveCompletionSlot(quotaRedis, qKey);
+      if (!slot.ok) {
+        return jsonAssistant(
+          {
+            error: 'quota_exhausted',
+            reply:
+              'you have reached the daily limit for this assistant (50 replies per utc day). try again after midnight utc.',
+          },
+          { status: 429 },
+        );
+      }
+      reservedSlot = true;
+    }
+
+    const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
+    const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
+    const resumePdfPlain = await loadResumePdfPlain(8_000);
+
+    const systemWithContext = [
+      baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
+      'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
+      'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
+      'résumé pdf extract (plain text):\n' + resumePdfPlain,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    const safeTurns = parsed.messages.slice(-18).map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: clip(m.content, 8000),
+    }));
+
+    let textOut: string;
+    try {
+      if (googleKey) {
+        const modelId = process.env.GOOGLE_AI_MODEL?.trim() || 'gemini-2.5-flash';
+        textOut = await geminiViaGoogleSdk(googleKey, modelId, systemWithContext, safeTurns);
+      } else {
+        const openai = createOpenAI({ apiKey: openaiKey as string });
+        const openaiModel = openai.chat(process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini');
+        const { text } = await generateText({
+          model: openaiModel as unknown as LanguageModel,
+          system: systemWithContext,
+          messages: safeTurns,
+          maxOutputTokens: ASSISTANT_MAX_OUTPUT_TOKENS,
+          temperature: 0.6,
+          maxRetries: 1,
+        });
+        textOut = text;
+      }
+    } catch (cause) {
+      if (reservedSlot && quotaRedis && qKey) {
+        await releaseReservedSlot(quotaRedis, qKey).catch(() => {});
+        reservedSlot = false;
+      }
+      logUpstreamFailure(cause);
+      return jsonAssistant(
+        {
+          error: 'upstream_unavailable',
+          reply: 'the model is busy right now. try again in a moment.',
+        },
+        { status: 502 },
+      );
+    }
+
+    const reply =
+      stripAssistantMarkdownArtifacts((textOut || '').trim()) || '(empty model response)';
+    return jsonAssistant({ reply });
   } catch (cause) {
     if (reservedSlot && quotaRedis && qKey) {
       await releaseReservedSlot(quotaRedis, qKey).catch(() => {});
     }
-    console.error('[api/chat] upstream failure', cause);
-    const detail = safeProviderDetail(cause);
-    const suffix = showDetail && detail ? ` (${detail})` : '';
+    console.error('[api/chat] unexpected failure', cause instanceof Error ? clip(cause.message, 400) : cause);
     return jsonAssistant(
       {
-        reply: `the model provider returned an error — try later or verify GOOGLE_* / OPENAI_* configuration.${suffix}`,
+        error: 'assistant_unavailable',
+        reply: 'the assistant hit a snag. reload and try again.',
       },
-      { status: 502 },
+      { status: 500 },
     );
   }
-
-  const reply =
-    stripAssistantMarkdownArtifacts((textOut || '').trim()) || '(empty model response)';
-  return jsonAssistant({ reply });
 }

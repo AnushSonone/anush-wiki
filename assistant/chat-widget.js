@@ -326,27 +326,35 @@
       } catch {
         data = {};
       }
+
+      /** Trust server `reply` on success. On errors, prefer server copy; never invent stacks. */
       const trimmed =
         typeof data.reply === 'string' ? data.reply.trim() : '';
-      const fallbackBadGateway =
-        'the gateway or model timed out — try sending your message again in a moment.';
       let reply = trimmed;
+
       if (!reply) {
-        reply = res.ok ? '(no reply)' : '';
-      }
-      if (!reply && !res.ok) {
-        reply =
-          res.status === 502 || res.status === 504
-            ? fallbackBadGateway
-            : 'sorry — something broke while talking to the server.';
+        if (res.ok) {
+          reply = 'the assistant returned an empty answer. try asking again.';
+        } else if (res.status === 403) {
+          reply =
+            'this assistant needs first-party cookies for fair daily limits. allow cookies for this site, reload, then try again.';
+        } else if (res.status === 429) {
+          reply =
+            'you have reached the daily limit for this assistant. try again after midnight utc.';
+        } else if (res.status === 502 || res.status === 504) {
+          reply = 'the model is busy right now. try again in a moment.';
+        } else if (res.status === 503) {
+          reply = 'the assistant is temporarily offline.';
+        } else {
+          reply = 'the assistant hit a snag. reload and try again.';
+        }
       }
 
       msgs.push({ role: 'assistant', content: reply });
     } catch {
       msgs.push({
         role: 'assistant',
-        content:
-          'offline or blocked network — reload after starting npm run dev.',
+        content: 'could not reach the assistant. check your connection and try again.',
       });
     }
 
