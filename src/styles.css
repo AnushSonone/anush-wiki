@@ -158,11 +158,30 @@ body.page-blog::after {
 .site-name a:any-link {
   color: inherit;
   text-decoration: none;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.35em;
+}
+
+.site-name__fish,
+.site-name__text {
+  white-space: nowrap;
 }
 
 .site-name a:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 3px;
+}
+
+/* phones: fishes above name, name centered, fishes below */
+@media (max-width: 36rem) {
+  .site-name a:any-link {
+    flex-direction: column;
+    row-gap: 0.15em;
+    column-gap: 0;
+  }
 }
 
 .site-nav {
@@ -655,6 +674,25 @@ body.page-blog::after {
   margin: 1rem 0;
   padding-left: 1rem;
   border-left: 2px solid var(--ink);
+}
+
+.blog-article .blog-diagram {
+  margin: 1.25rem 0;
+  padding: 0;
+}
+
+.blog-article .blog-diagram pre {
+  margin: 0;
+  padding: 0.75rem 0;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.35;
+  white-space: pre;
+}
+
+.blog-article .blog-diagram figcaption {
+  margin: 0.35rem 0 0;
+  font-size: 0.95em;
 }
 
 /* First-party wiki assistant — bundle URL: GET /api/chat/widget (app/api/chat/widget/route.ts). specs/feature-assistant-chat.md */
