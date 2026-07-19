@@ -118,17 +118,27 @@ body.page-blog::after {
   padding-bottom: 1.5rem;
 }
 
-.site-top.site-top--about > .resume-link {
+.site-top.site-top--about > .resume-link,
+.site-top.site-top--about > .resume-block {
   margin-bottom: 0;
 }
 
 .site-header-row {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
+  justify-content: center;
   margin-bottom: 1.5rem;
+  /* room for primary nav sitting just above the centered name */
+  padding-top: 1.75rem;
+}
+
+/* keep blog/home on the right edge; lift them slightly above the name line */
+.site-header-row > nav[aria-label="primary"] {
+  position: absolute;
+  right: 0;
+  top: -0.35rem;
 }
 
 /* lock site title so it matches across h1 (index/about) and div/p (blog) */
@@ -137,6 +147,7 @@ body.page-blog::after {
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
+  text-align: center;
   text-transform: lowercase;
 }
 
@@ -176,6 +187,7 @@ body.page-blog::after {
 .intro {
   margin: 0 0 1rem;
   max-width: 100%;
+  text-align: center;
 }
 
 /* h2 sections — no label micro-typography */
@@ -326,6 +338,49 @@ body.page-blog::after {
 
 .lead {
   margin: 0 0 1.5rem;
+}
+
+.lead--tagline {
+  margin-bottom: 0.75rem;
+}
+
+.site-intro {
+  text-align: center;
+}
+
+.site-intro .lead--tagline {
+  margin-bottom: 0.75rem;
+}
+
+.site-intro .lead-fish {
+  margin: 0 0 1rem;
+}
+
+.site-intro .lead {
+  margin-bottom: 1.5rem;
+}
+
+.lead-fish {
+  margin: 0 0 1rem;
+  letter-spacing: 0.12em;
+  user-select: none;
+}
+
+.resume-block {
+  text-align: center;
+  margin: 0 0 1.5rem;
+}
+
+.resume-block .lead-fish {
+  margin: 0 0 0.75rem;
+}
+
+.resume-block .resume-link {
+  margin: 0 0 0.75rem;
+}
+
+.resume-block .lead-fish:last-child {
+  margin-bottom: 0;
 }
 
 .resume-link {
