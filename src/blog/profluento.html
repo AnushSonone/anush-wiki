@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="https://anush.wiki/blog/profluento" rel="canonical"/>
+<title>how i raised 100k for an ai wealth management platform - anush sonone</title>
+<meta content="founder story and technical notes on profluento: raising 100k, linkedin-derived lead intelligence, scoring, kv caching, and building an ai crm for wealth managers." name="description"/>
+<meta content="anush sonone" name="author"/>
+<meta content="article" property="og:type"/>
+<meta content="how i raised 100k for an ai wealth management platform - anush sonone" property="og:title"/>
+<meta content="founder story and technical notes on profluento: raising 100k, linkedin-derived lead intelligence, scoring, kv caching, and building an ai crm for wealth managers." property="og:description"/>
+<meta content="https://anush.wiki/blog/profluento" property="og:url"/>
+<meta content="anush.wiki" property="og:site_name"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="how i raised 100k for an ai wealth management platform - anush sonone" property="twitter:title"/>
+<meta content="founder story and technical notes on profluento: raising 100k, linkedin-derived lead intelligence, scoring, kv caching, and building an ai crm for wealth managers." property="twitter:description"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" property="twitter:image"/>
+<meta content="2026-07-19" property="article:published_time"/>
+<link href="../styles.css" rel="stylesheet"/>
+</head>
+<body class="page-blog">
+<a class="skip-link" href="#main">skip to content</a>
+<main class="site-main site-main--blog" id="main">
+<div class="site-top">
+<div class="site-header-row">
+<div class="site-name"><a href="/"><span class="site-name__fish" aria-hidden="true">𓆝 𓆟 𓆞</span><span class="site-name__text">anush sonone</span><span class="site-name__fish" aria-hidden="true">𓆞 𓆟 𓆝</span></a></div>
+<nav aria-label="primary">
+<ul class="site-nav">
+<li><a href="/">home</a></li>
+<li><a href="/blog/">blog</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<article class="blog-article" id="article">
+<h1>how i raised 100k for an ai wealth management platform</h1>
+<p class="article-meta">
+<time datetime="2026-07-19">jul 19, 2026</time> · by anush sonone
+</p>
+
+<p>
+<a href="https://profluento.dev" rel="noopener noreferrer" target="_blank">profluento.dev</a>
+·
+<a href="https://github.com/AnushSonone/profluento" rel="noopener noreferrer" target="_blank">github</a>
+</p>
+
+<section aria-labelledby="intro-heading">
+<h2 id="intro-heading">intro</h2>
+
+<p>
+towards the start of my sophomore year, i started a company named
+<a href="https://profluento.dev" rel="noopener noreferrer" target="_blank">profluento</a>
+with my two buddies. together we raised 100k. people have asked about it, so i wanted to write down the problem we were chasing and the scoring system i spent most of my time on. :)
+</p>
+
+<section aria-labelledby="problem-heading">
+<h2 id="problem-heading">problem</h2>
+
+<p>
+wealth management is an incredibly relationship-sensitive field. most ria's and family offices will almost always recieve their clients through word of mouth refferals, and as a result we end up with advisors who have interesting marketing practices.
+<p>example: one client we worked with would go to restaurants in new york and spend something like $5,000 to $10,000 a night just to advertise his services.
+
+<p>definitely could be a pipeline! but we thought there were better ways to go about it. and what better place to start than the largest professional network on earth? (linkedin!!)
+</p>
+
+</p>
+
+<p>
+and if you did try the existing lead-generation platforms, you'd often end up contacting old or dead linkedin profiles. when you did find someone active, you'd get cursed out for being the 11th wealth manager to hit them up in the last 6 months. stale lists, over-touched people. that was the other half of the problem.
+</p>
+
+<p>
+our bet was to scrape & use linkedin data to turn signals into ranked, explainable prospects. essentially, a prospecting system for wealth managers with native ai integrations. here's how we went about it:
+</p>
+
+<section aria-labelledby="market-heading">
+<h2 id="market-heading">market</h2>
+
+<p>
+we tried to keep the first version small. a tool a regular wealth manager could open and use to find fresher leads than what they were already buying. 
+</p>
+
+<p>
+fresh mattered more than volume for us. advisors already have giant lists. the gap we kept hearing about was knowing who just changed roles, moved cities, or otherwise looked worth contacting <em>now</em>. so we aimed at keeping those signals current:
+</p>
+
+<ul>
+<li>250m+ professional data points behind the lead lists</li>
+<li>refreshed every 5 days</li>
+<li>ranked so an advisor could decide whether to reach out</li>
+</ul>
+
+<p>
+that also became how we described the product. a lot of tools talk about database size. we talked about the 5-day refresh, because stale contact data was the failure mode we saw most often.
+</p>
+
+<p>
+we also looked at the broader wealth-management market when we were putting the pitch together. the deck numbers we used:
+</p>
+
+<ul>
+<li>~$1.7t increase in aum by 2033</li>
+<li>~40% of wealth managers retiring by 2035</li>
+<li>~10.6% year-over-year growth in asia alone</li>
+<li>newer cohorts more willing to adopt new tools than the older partner layer</li>
+</ul>
+
+<p>
+those figures made the space feel active: more assets moving around, a lot of advisors leaving over the next decade, and younger managers who still needed network and money just to find leads. we didn't think we'd solve all of that. fresh prospecting was just the first piece we knew how to build.
+</p>
+</section>
+
+<section aria-labelledby="technical-heading">
+<h2 id="technical-heading">the system</h2>
+
+<p>
+most of my time went into the scoring path. the ui mattered, but the work i owned was taking messy professional profiles and turning them into ranked leads with reasons attached. there's a public writeup in the
+<a href="https://github.com/AnushSonone/profluento" rel="noopener noreferrer" target="_blank">github readme</a>.
+we kept the actual scoring source private.
+</p>
+
+<h3>request path</h3>
+
+<p>
+a score request wasn't one big function. it went through auth, hit a scoring api, landed in a queue, then a worker did the expensive part and wrote through a region-local cache before results came back. nothing fancy. just enough structure that paid enrichment wouldn't fall over the first time usage spiked.
+</p>
+
+<figure class="blog-diagram">
+<pre aria-label="profluento scoring request path">
+advisor browser
+      |
+      v
+ next.js app  ──auth──>  scoring api
+                              |
+                              v
+                           job queue
+                              |
+                              v
+                    +---------v---------+
+                    |      worker       |
+                    |  1. read kv cache |
+                    |  2. enrich if miss|
+                    |  3. normalize     |
+                    |  4. validate      |
+                    |  5. score factors |
+                    |  6. write cache   |
+                    +---------+---------+
+                              |
+                              v
+                       ranked results
+                    score + evidence +
+                    confidence + sources
+</pre>
+<figcaption>queue in the middle so a burst of requests didn't immediately burn enrichment credits.</figcaption>
+</figure>
+
+<h3>scoring pipeline</h3>
+
+<p>
+inside the worker we tried not to score raw linkedin-ish json. we normalized it into a fixed shape, checked completeness and compliance, then ran ten weighted factors. missing fields had fallbacks. weights had to sum to 100, and if you edited them they renormalized. a lot of this was just making the pipeline boring enough to debug.
+</p>
+
+<figure class="blog-diagram">
+<pre aria-label="lead scoring pipeline stages">
+raw person json
+      |
+      v
+ normalizers ──> standardized fields
+      |            (titles, dates, schools,
+      |             locations, network stats)
+      v
+ validators ───> completeness + schema
+      |            + compliance blocks
+      v
+ factor scorers (0–100 each)
+      |
+      +--> recency              15%
+      +--> seniority            20%
+      +--> company quality      15%
+      +--> location proximity   10%
+      +--> education            10%
+      +--> social presence       8%
+      +--> compensation signals  7%
+      +--> industry affinity     5%
+      +--> network strength      5%
+      +--> stability             5%
+      |
+      v
+ weighted sum
+ total = Σ(factor_score × factor_weight)
+      |
+      v
+ explanation bundle
+ factor breakdown · evidence ·
+ confidence · audit metadata
+</pre>
+<figcaption>we wanted every score to come with a reason we could point at.</figcaption>
+</figure>
+
+<p>
+recency and seniority got the biggest weights because those were the signals advisors asked about most: who just moved, who can decide. company quality and location helped keep lists from going random. the smaller factors mostly broke ties when two people looked similar on title.
+</p>
+
+<p>
+compliance lived in validation. age scoring stayed off by default. religion, ethnicity, gender, and political affiliation were blocked.
+</p>
+
+<h3>caching</h3>
+
+<p>
+v1 enriched too many people too early. paid people-search calls get expensive when every profile hits the api. so we put a region-local kv cache in front of enrichment and kept the work on the queue. same person twice shouldn't cost twice. that change was less about cleverness and more about not lighting money on fire.
+</p>
+
+<figure class="blog-diagram">
+<pre aria-label="kv cache hit versus miss for paid enrichment">
+                    profile key
+                         |
+                         v
+                  region-local kv
+                    /         \
+               hit /           \ miss
+                  /             \
+                 v               v
+         reuse cached      call people-search /
+         enrichment        paid enrichment api
+                 \               |
+                  \              v
+                   \        write kv entry
+                    \            |
+                     \           |
+                      v          v
+                   continue normalize → score
+</pre>
+<figcaption>after the cache stuck, repeated enrichment requests dropped by about 80%.</figcaption>
+</figure>
+</section>
+
+<section aria-labelledby="funding-heading">
+<h2 id="funding-heading">funding</h2>
+
+<p>
+we found a private company willing to fund us with about 100k in people-search credits, sourced from linkedin data. that mattered more than a cash headline. enrichment was the expensive part of the product.
+</p>
+
+<p>
+the credits paid for the first real scoring and lead-list runs. that's what helped us ship the first demo advisors could click through and react to.
+</p>
+</section>
+
+<section aria-labelledby="ending-heading">
+<h2 id="ending-heading">what happened</h2>
+
+<p>
+by the time we wound it down, we had worked with 15+ wealth management firms, were around $30-40k arr, and had ranked around 10k profiles. for three students, that was both validating and a little overwhelming.
+</p>
+
+<p>
+support, onboarding, and keeping things running started eating the time we needed for classes. we couldn't honestly support that many clients during the school year, so we stopped running it as a company and open sourced the idea instead.
+</p>
+
+<p>this was was one of the most fun projects i've attempted, and i absolutely plan to do something similar to this again.</p>
+
+<p>
+site:
+<a href="https://profluento.dev" rel="noopener noreferrer" target="_blank">profluento.dev</a>.
+repo:
+<a href="https://github.com/AnushSonone/profluento" rel="noopener noreferrer" target="_blank">github</a>.
+</p>
+
+<p>
+if you want to dig into any of this, i'd love to talk.
+<a href="https://tidycal.com/anushsonone/coffee-chat" rel="noopener noreferrer" target="_blank">book a coffee chat</a>.
+</p>
+</section>
+</article>
+<div class="site-chrome">
+<div class="site-chrome__links">
+<p class="site-chrome-credit">
+heavily inspired by
+<a href="https://motherfuckingwebsite.com/">motherfuckingwebsite.com</a>
+</p>
+<a class="site-chrome__external" href="https://utexas.network/">utexas.network</a>
+</div>
+<div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
+</div>
+</main>
+<script defer src="/api/chat/widget"></script>
+</body>
+</html>
