@@ -18,6 +18,7 @@
   const writesEl = root.querySelector("[data-writes]");
   const readsEl = root.querySelector("[data-reads]");
   const hudEl = root.querySelector("[data-hud]");
+  const quorumLossEl = root.querySelector("[data-quorum-loss]");
 
   let lastSnapshot = null;
   let es = null;
@@ -107,6 +108,9 @@
     lastSnapshot = snap;
     renderHud(snap);
     renderNodes(snap);
+    if (quorumLossEl) {
+      quorumLossEl.hidden = !!snap.quorum;
+    }
     if (!snap.quorum) {
       setLive(false, "no quorum · need 4 of 7 alive");
     } else {
