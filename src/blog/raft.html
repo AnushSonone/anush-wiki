@@ -69,8 +69,8 @@ kill a machine and watch election and catch-up; loadgen keeps writes and reads m
 
 <p class="raft-lab__hint">
 seven machines show role, term, and commit index.
-prefer killing the leader. machines auto-heal after about 10 seconds.
-target load is about 1.5k writes/s and 10k reads/s.
+prefer killing the leader. machines come back on their own.
+each visitor can kill about once every 5 seconds; at most two machines can be down at once.
 </p>
 
 <div class="raft-lab__nodes" data-nodes></div>
@@ -80,17 +80,15 @@ target load is about 1.5k writes/s and 10k reads/s.
 <div class="raft-lab__obs-block">
 <div class="raft-lab__obs-head">
 <h3>grafana</h3>
-<a href="http://127.0.0.1:3001/d/kmc-overview/kill-my-cluster" rel="noopener noreferrer" target="_blank" data-grafana-link>open grafana</a>
+<a href="https://raft-grafana.anush.wiki/d/kmc-overview/kill-my-cluster" rel="noopener noreferrer" target="_blank" data-grafana-link>open grafana</a>
 </div>
 <p class="raft-lab__obs-note">
 leader, term, commit index, writes/s, and reads/s from the live nodes.
-local grafana is <code>:3001</code> so it does not fight this wiki on <code>:3000</code>.
-on the vm, point this link at the host grafana url.
 </p>
 <iframe
   class="raft-lab__frame"
   title="kill my cluster grafana overview"
-  src="http://127.0.0.1:3001/d/kmc-overview/kill-my-cluster?orgId=1&amp;kiosk&amp;theme=light&amp;refresh=5s"
+  src="https://raft-grafana.anush.wiki/d/kmc-overview/kill-my-cluster?orgId=1&amp;kiosk&amp;theme=light&amp;refresh=5s"
   loading="lazy"
   referrerpolicy="no-referrer-when-downgrade"
   data-grafana-frame
@@ -109,7 +107,7 @@ it runs seven dockerized machines with a whitelist control plane for kill, parti
 
 <p>
 grafana and prometheus sit under the demo so you can see leader, term, commit index, and applies move on real processes.
-the teaching beat is killing the leader and watching the group recover.
+the teaching beat is killing the leader and watching the group elect and catch up.
 </p>
 
 <h2>learn raft</h2>

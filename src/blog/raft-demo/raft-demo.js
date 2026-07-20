@@ -73,12 +73,6 @@
         ]
           .filter(Boolean)
           .join(" ");
-        const heal =
-          n.healDueMs > 0
-            ? '<div class="raft-lab__node-heal">heals in ' +
-              Math.ceil(n.healDueMs / 1000) +
-              "s</div>"
-            : "";
         return (
           '<div class="' +
           cls +
@@ -98,7 +92,6 @@
           (n.commitIndex || 0) +
           "</span>" +
           "</div>" +
-          heal +
           '<button type="button" class="raft-lab__kill" data-kill="' +
           n.id +
           '" ' +
@@ -164,7 +157,7 @@
         btn.disabled = false;
         return;
       }
-      setToast("machine " + id + " killed · auto-heal ~10s");
+      setToast("machine " + id + " killed");
     } catch (err) {
       setToast("kill failed: network error");
       btn.disabled = false;
