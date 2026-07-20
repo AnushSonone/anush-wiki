@@ -1,0 +1,375 @@
+/* Raft dashboard: inherits anush.wiki (white / Times / hairlines). Unboxed. */
+
+.raft-lab {
+  --rl-ink: var(--ink, #000000);
+  --rl-line: var(--hairline, #cccccc);
+  --rl-muted: #444444;
+  --rl-soft: #222222;
+  --rl-leader: #000000;
+  --rl-fill: #fafafa;
+
+  box-sizing: border-box;
+  margin: 0 0 3rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--rl-ink);
+  font: inherit;
+  /* Wider than the 37.5rem blog column; stay inside the viewport. */
+  width: min(72rem, calc(100vw - 2rem));
+  max-width: min(72rem, calc(100vw - 2rem));
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.raft-lab *,
+.raft-lab *::before,
+.raft-lab *::after {
+  box-sizing: border-box;
+}
+
+.raft-lab__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.raft-lab__hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+
+.raft-lab__hud > div {
+  margin: 0;
+}
+
+.raft-lab__hud dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--rl-muted);
+  letter-spacing: 0.02em;
+}
+
+.raft-lab__hud dd {
+  margin: 0.1rem 0 0;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  font-size: 1.05rem;
+}
+
+.raft-lab__node-heal {
+  font-size: 0.8rem;
+  color: var(--rl-muted);
+}
+
+.raft-lab__toast {
+  min-height: 1.25rem;
+  margin: 0 0 1.5rem;
+  color: var(--rl-muted);
+  font-size: 0.95rem;
+}
+
+.raft-lab__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--rl-muted);
+}
+
+.raft-lab__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #999999;
+  flex-shrink: 0;
+}
+
+.raft-lab__dot.is-live {
+  background: #1a7a32;
+}
+
+.raft-lab__hint {
+  margin: 0 0 1.5rem;
+  color: var(--rl-soft);
+  max-width: 40rem;
+}
+
+.raft-lab__nodes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  margin: 0 0 2rem;
+  min-height: 16rem;
+}
+
+@media (min-width: 720px) {
+  .raft-lab__nodes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 20rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .raft-lab__nodes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .raft-lab__nodes {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+}
+
+.raft-lab__node {
+  border-top: 1px solid var(--rl-line);
+  padding: 1rem 0 0.35rem;
+  min-height: 10.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: transparent;
+}
+
+.raft-lab__node.is-leader {
+  border-top-width: 2px;
+  border-top-color: var(--rl-ink);
+}
+
+.raft-lab__node.is-dead .raft-lab__node-role {
+  color: var(--rl-muted);
+  text-decoration: line-through;
+}
+
+.raft-lab__node.is-partitioned .raft-lab__node-id::after {
+  content: " · partitioned";
+  font-weight: normal;
+  color: var(--rl-muted);
+}
+
+.raft-lab__node-id {
+  font-size: 0.85rem;
+  color: var(--rl-muted);
+  letter-spacing: 0.02em;
+}
+
+.raft-lab__node-role {
+  font-size: 1.65rem;
+  line-height: 1.15;
+  margin: 0.15rem 0 0.25rem;
+  font-weight: normal;
+}
+
+.raft-lab__node-meta {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--rl-muted);
+  flex: 1;
+}
+
+.raft-lab__node-meta span {
+  display: block;
+}
+
+.raft-lab__kill {
+  margin-top: 0.75rem;
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--rl-ink);
+  background: transparent;
+  color: var(--rl-ink);
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.raft-lab__kill:hover:not(:disabled) {
+  color: var(--rl-muted);
+  border-bottom-color: var(--rl-muted);
+}
+
+.raft-lab__kill:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-bottom-color: var(--rl-line);
+}
+
+.raft-lab__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.1rem;
+  margin: 0 0 1.75rem;
+  padding: 1.25rem 0 0;
+  border-top: 1px solid var(--rl-line);
+}
+
+.raft-lab__btn,
+.raft-lab__select {
+  font: inherit;
+  font-size: 0.95rem;
+  border: none;
+  border-bottom: 1px solid var(--rl-ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--rl-ink);
+  padding: 0.15rem 0;
+}
+
+.raft-lab__btn {
+  cursor: pointer;
+}
+
+.raft-lab__btn:hover {
+  color: var(--rl-muted);
+  border-bottom-color: var(--rl-muted);
+}
+
+.raft-lab__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  color: var(--rl-muted);
+}
+
+.raft-lab__select {
+  color: var(--rl-ink);
+  padding-right: 0.25rem;
+}
+
+.raft-lab__put {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.85rem 1rem;
+  margin: 0 0 2rem;
+}
+
+.raft-lab__input {
+  font: inherit;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 1px solid var(--rl-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--rl-ink);
+  padding: 0.35rem 0;
+  min-width: 8rem;
+  width: 9rem;
+}
+
+.raft-lab__input:focus {
+  outline: none;
+  border-bottom-color: var(--rl-ink);
+}
+
+.raft-lab__input:nth-of-type(2) {
+  width: 11rem;
+  min-width: 10rem;
+}
+
+.raft-lab__store {
+  margin: 0;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--rl-line);
+}
+
+.raft-lab__store-label {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  color: var(--rl-ink);
+}
+
+.raft-lab__store-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  min-height: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.raft-lab__kv {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  font-size: 0.9rem;
+  color: var(--rl-soft);
+}
+
+.raft-lab__kv strong {
+  color: var(--rl-ink);
+  font-weight: normal;
+}
+
+.raft-lab__empty {
+  color: var(--rl-muted);
+}
+
+.raft-lab__toast {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: var(--rl-muted);
+  min-height: 1.35em;
+}
+
+.raft-lab__observability {
+  margin: 2.5rem 0 0;
+  padding: 2rem 0 0;
+  border-top: 1px solid var(--rl-line);
+}
+
+.raft-lab__obs-block {
+  margin: 0 0 2.25rem;
+}
+
+.raft-lab__obs-block:last-child {
+  margin-bottom: 0;
+}
+
+.raft-lab__obs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.85rem;
+}
+
+.raft-lab__obs-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: normal;
+}
+
+.raft-lab__obs-head a {
+  font-size: 0.95rem;
+}
+
+.raft-lab__obs-note {
+  margin: 0 0 0.85rem;
+  color: var(--rl-muted);
+  max-width: 40rem;
+}
+
+.raft-lab__frame {
+  display: block;
+  width: 100%;
+  height: min(70vh, 36rem);
+  min-height: 22rem;
+  border: 1px solid var(--rl-line);
+  background: #fafafa;
+}
+
+.raft-lab__frame--prom {
+  height: min(55vh, 28rem);
+  min-height: 18rem;
+}

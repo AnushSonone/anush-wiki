@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="https://anush.wiki/blog/raft" rel="canonical"/>
+<title>kill my cluster: a raft kv you can break - anush sonone</title>
+<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." name="description"/>
+<meta content="anush sonone" name="author"/>
+<meta content="article" property="og:type"/>
+<meta content="kill my cluster: a raft kv you can break - anush sonone" property="og:title"/>
+<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." property="og:description"/>
+<meta content="https://anush.wiki/blog/raft" property="og:url"/>
+<meta content="anush.wiki" property="og:site_name"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="kill my cluster: a raft kv you can break - anush sonone" name="twitter:title"/>
+<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." name="twitter:description"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
+<meta content="2026-07-18" property="article:published_time"/>
+<link href="../styles.css" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css" rel="stylesheet"/>
+</head>
+<body class="page-blog">
+<a class="skip-link" href="#main">skip to content</a>
+<main class="site-main site-main--blog" id="main">
+<div class="site-top">
+<div class="site-header-row">
+<div class="site-name"><a href="/"><span class="site-name__fish" aria-hidden="true">𓆝 𓆟 𓆞</span><span class="site-name__text">anush sonone</span><span class="site-name__fish" aria-hidden="true">𓆞 𓆟 𓆝</span></a></div>
+<nav aria-label="primary">
+<ul class="site-nav">
+<li><a href="/">home</a></li>
+<li><a href="/blog/">blog</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<article class="blog-article" id="article">
+<h1>kill my cluster</h1>
+<p class="article-meta">
+<time datetime="2026-07-18">jul 18, 2026</time> · by anush sonone
+</p>
+
+<p>
+this is a from-scratch raft key-value store you can break on purpose.
+the dashboard below is the public surface for that cluster.
+</p>
+
+<p>
+the dashboard talks to a hosted seven-machine raft cluster.
+kill a machine and watch election and catch-up; loadgen keeps writes and reads moving.
+</p>
+
+<section id="raft-lab" class="raft-lab" aria-label="cluster dashboard" data-api-base="/api/raft">
+<div class="raft-lab__status-row">
+<div class="raft-lab__status">
+<span class="raft-lab__dot" data-status-dot></span>
+<span data-status-text>connecting…</span>
+</div>
+<dl class="raft-lab__hud" data-hud>
+<div><dt>users</dt><dd data-users>-</dd></div>
+<div><dt>uptime</dt><dd data-uptime>-</dd></div>
+<div><dt>writes/s</dt><dd data-writes>-</dd></div>
+<div><dt>reads/s</dt><dd data-reads>-</dd></div>
+</dl>
+</div>
+
+<p class="raft-lab__hint">
+seven machines show role, term, and commit index.
+prefer killing the leader. machines auto-heal after about 10 seconds.
+target load is about 1.5k writes/s and 10k reads/s.
+</p>
+
+<div class="raft-lab__nodes" data-nodes></div>
+<p class="raft-lab__toast" data-toast></p>
+
+<div class="raft-lab__observability" id="observability">
+<div class="raft-lab__obs-block">
+<div class="raft-lab__obs-head">
+<h3>grafana</h3>
+<a href="http://127.0.0.1:3001/d/kmc-overview/kill-my-cluster" rel="noopener noreferrer" target="_blank" data-grafana-link>open grafana</a>
+</div>
+<p class="raft-lab__obs-note">
+leader, term, commit index, writes/s, and reads/s from the live nodes.
+local grafana is <code>:3001</code> so it does not fight this wiki on <code>:3000</code>.
+on the vm, point this link at the host grafana url.
+</p>
+<iframe
+  class="raft-lab__frame"
+  title="kill my cluster grafana overview"
+  src="http://127.0.0.1:3001/d/kmc-overview/kill-my-cluster?orgId=1&amp;kiosk&amp;theme=light&amp;refresh=5s"
+  loading="lazy"
+  referrerpolicy="no-referrer-when-downgrade"
+  data-grafana-frame
+></iframe>
+</div>
+</div>
+</section>
+
+<h2>what this project is</h2>
+
+<p>
+<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
+is a custom raft kv written in go.
+it runs seven dockerized machines with a whitelist control plane for kill, partition, and heal.
+</p>
+
+<p>
+grafana and prometheus sit under the demo so you can see leader, term, commit index, and applies move on real processes.
+the teaching beat is killing the leader and watching the group recover.
+</p>
+
+<h2>learn raft</h2>
+
+<p>
+if raft is new, start with
+<a href="https://thesecretlivesofdata.com/raft/" rel="noopener noreferrer" target="_blank">the secret lives of data</a>.
+it walks through election and log replication with an interactive timeline.
+</p>
+
+<p>
+then read
+<a href="https://raft.github.io/raft.pdf" rel="noopener noreferrer" target="_blank">in search of an understandable consensus algorithm</a>.
+the hub at
+<a href="https://raft.github.io/" rel="noopener noreferrer" target="_blank">raft.github.io</a>
+collects talks and links.
+</p>
+
+<p>
+<iframe
+  title="usenix atc 14 raft talk by diego ongaro"
+  src="https://www.youtube-nocookie.com/embed/no5Im1daS-o"
+  style="width:100%;aspect-ratio:16/9;border:1px solid #cccccc;background:#000;margin:1.25rem 0;"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen
+  loading="lazy"
+  referrerpolicy="strict-origin-when-cross-origin"
+></iframe>
+</p>
+
+<h2>learn grpc</h2>
+
+<p>
+the nodes talk with
+<a href="https://grpc.io/docs/what-is-grpc/introduction/" rel="noopener noreferrer" target="_blank">grpc</a>
+over http/2, using
+<a href="https://protobuf.dev/" rel="noopener noreferrer" target="_blank">protocol buffers</a>
+for the messages.
+</p>
+
+<p>
+good starting docs:
+<a href="https://grpc.io/docs/what-is-grpc/core-concepts/" rel="noopener noreferrer" target="_blank">core concepts</a>
+and the
+<a href="https://grpc.io/docs/languages/go/quickstart/" rel="noopener noreferrer" target="_blank">go quickstart</a>.
+</p>
+
+<p>
+<iframe
+  title="grpc in 5 minutes"
+  src="https://www.youtube-nocookie.com/embed/njC24ts24Pg"
+  style="width:100%;aspect-ratio:16/9;border:1px solid #cccccc;background:#000;margin:1.25rem 0;"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen
+  loading="lazy"
+  referrerpolicy="strict-origin-when-cross-origin"
+></iframe>
+</p>
+
+<h2>how the repo maps</h2>
+
+<p>
+<code>internal/storage</code> is the wal and snapshots.
+<code>internal/raft</code> is election and replication.
+<code>internal/kv</code> is the replicated map with exactly-once client ids.
+</p>
+
+<p>
+<code>internal/controlplane</code> is whitelist kill, partition, heal, and sse.
+<code>deploy/compose</code> runs the seven nodes plus prometheus and grafana.
+locally that is control plane <code>:8080</code>, grafana <code>:3001</code>, and prometheus <code>:9090</code>.
+the public ui is this page, not a separate demo host.
+</p>
+
+<h2>suggested path</h2>
+
+<ol>
+<li>skim the dashboard above so the controls are familiar.</li>
+<li>watch the raft talk, then skim the paper.</li>
+<li>watch grpc in five minutes.</li>
+<li>clone
+<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
+and run compose when you want the real cluster.</li>
+<li>read <code>internal/raft/node.go</code> with the paper open beside it.</li>
+</ol>
+</article>
+<div class="site-chrome">
+<div class="site-chrome__links">
+<p class="site-chrome-credit">
+heavily inspired by
+<a href="https://motherfuckingwebsite.com/">motherfuckingwebsite.com</a>
+</p>
+<a class="site-chrome__external" href="https://utexas.network/">utexas.network</a>
+</div>
+<div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
+</div>
+</main>
+<script src="/blog/raft-demo/raft-demo.js" defer></script>
+<script defer src="/api/chat/widget"></script>
+</body>
+</html>

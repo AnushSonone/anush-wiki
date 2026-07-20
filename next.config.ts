@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next';
 import { BLOG_POST_SLUGS, blogPostCanonicalPath } from './lib/blog-post-slugs';
 
+/** Control plane origin for /api/raft/* rewrites (no trailing slash). */
+const RAFT_CP_URL = (process.env.RAFT_CP_URL || 'http://127.0.0.1:8080').replace(/\/$/, '');
+
 const nextConfig: NextConfig = {
   /** Dev-only: webpack’s default eval-based source maps trip Chrome Issues (“CSP blocks eval”) even when your HTML sends no CSP. This keeps maps without `eval()`. */
   webpack: (config, { dev, isServer }) => {
@@ -33,6 +36,13 @@ const nextConfig: NextConfig = {
         { source: '/blog', destination: '/blog/index.html' },
         { source: '/blog/', destination: '/blog/index.html' },
         ...blogPostRewrites,
+      ],
+      // Proxy chaos API + SSE to the hosted (or local) kill-my-cluster control plane.
+      afterFiles: [
+        {
+          source: '/api/raft/:path*',
+          destination: `${RAFT_CP_URL}/api/:path*`,
+        },
       ],
     };
   },
