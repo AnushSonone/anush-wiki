@@ -108,7 +108,7 @@
     renderHud(snap);
     renderNodes(snap);
     if (!snap.quorum) {
-      setLive(false, "no quorum");
+      setLive(false, "no quorum · need 4 of 7 alive");
     } else {
       setLive(true, "live · term " + (snap.term || "?") + " · leader " + (snap.leaderId || "?"));
     }
