@@ -21,7 +21,7 @@
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <meta content="2026-07-18" property="article:published_time"/>
 <link href="../styles.css" rel="stylesheet"/>
-<link href="/blog/raft-demo/raft-demo.css?v=quorum-boxes" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=since-loss" rel="stylesheet"/>
 </head>
 <body class="page-blog">
 <a class="skip-link" href="#main">skip to content</a>
@@ -62,6 +62,7 @@ kill a machine and watch election and catch-up; loadgen keeps writes and reads m
 <dl class="raft-lab__hud" data-hud>
 <div><dt>users</dt><dd data-users>-</dd></div>
 <div><dt>uptime</dt><dd data-uptime>-</dd></div>
+<div><dt>since loss</dt><dd data-since-loss title="time since last quorum loss">-</dd></div>
 <div><dt>writes/s</dt><dd data-writes>-</dd></div>
 <div><dt>reads/s</dt><dd data-reads>-</dd></div>
 </dl>
@@ -205,7 +206,7 @@ heavily inspired by
 <div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
 </div>
 </main>
-<script src="/blog/raft-demo/raft-demo.js?v=quorum-instant" defer></script>
+<script src="/blog/raft-demo/raft-demo.js?v=since-loss" defer></script>
 <script defer src="/api/chat/widget"></script>
 </body>
 </html>

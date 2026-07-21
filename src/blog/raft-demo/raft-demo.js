@@ -17,6 +17,7 @@
   const dotEl = root.querySelector("[data-status-dot]");
   const usersEl = root.querySelector("[data-users]");
   const uptimeEl = root.querySelector("[data-uptime]");
+  const sinceLossEl = root.querySelector("[data-since-loss]");
   const writesEl = root.querySelector("[data-writes]");
   const readsEl = root.querySelector("[data-reads]");
   const hudEl = root.querySelector("[data-hud]");
@@ -102,6 +103,11 @@
   function renderHud(snap) {
     if (usersEl) usersEl.textContent = String(snap.activeUsers ?? 0);
     if (uptimeEl) uptimeEl.textContent = fmtUptime(snap.uptimeMs);
+    if (sinceLossEl) {
+      const ms = snap.sinceLastQuorumLossMs;
+      sinceLossEl.textContent =
+        ms == null || ms < 0 ? "never" : fmtUptime(ms);
+    }
     if (writesEl) writesEl.textContent = fmtRate(snap.writesPerSec);
     if (readsEl) readsEl.textContent = fmtRate(snap.readsPerSec);
     if (hudEl) hudEl.hidden = false;
