@@ -393,3 +393,41 @@
   height: min(55vh, 28rem);
   min-height: 18rem;
 }
+
+/* Loadtest ladder table (below the live lab, still wider than blog column). */
+.raft-bench {
+  box-sizing: border-box;
+  margin: 0 0 2rem;
+  width: min(72rem, calc(100vw - 2rem));
+  max-width: min(72rem, calc(100vw - 2rem));
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.raft-bench__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.raft-bench__table th,
+.raft-bench__table td {
+  border: 1px solid var(--hairline, #cccccc);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.raft-bench__table th {
+  font-weight: normal;
+  background: #fafafa;
+}
+
+.raft-bench__table tbody tr:nth-child(even) td {
+  background: #fcfcfc;
+}

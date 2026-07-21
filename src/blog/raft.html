@@ -21,7 +21,7 @@
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <meta content="2026-07-18" property="article:published_time"/>
 <link href="../styles.css" rel="stylesheet"/>
-<link href="/blog/raft-demo/raft-demo.css?v=since-loss" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=bench-ladder" rel="stylesheet"/>
 </head>
 <body class="page-blog">
 <a class="skip-link" href="#main">skip to content</a>
@@ -97,6 +97,126 @@ leader, term, commit index, writes/s, and reads/s from the live nodes.
 </div>
 </div>
 </section>
+
+<h2>how we load-tested it</h2>
+
+<p>
+the numbers in the hud are not marketing defaults.
+before shipping higher write/read rates to the public oracle vm, we ran a
+fixed ladder on that box (aarch64, 4 ocpu / 24 gb) after deploying
+readindex + propose batching so gets no longer append to the raft log.
+</p>
+
+<p>
+process, in order:
+</p>
+
+<ol>
+<li>local proof that log-replicated gets + 1.5k writes / 10k reads election-stormed.</li>
+<li>ship readindex (majority heartbeat + short lease) and group-commit proposes.</li>
+<li>oracle rebuild on clean volumes; smoke at 80/160 with one kill and heal.</li>
+<li>raise loadgen only via a temporary compose override; hold each step ~3 minutes.</li>
+<li>pass = raft term flat (no storm without kills), loadgen errors ~0, some headroom on cpu.</li>
+<li>promote the last honest rate into the oracle overlay (rollback: revert that commit).</li>
+</ol>
+
+<p>
+we asked for 1.5k writes / 10k reads as an aspiration.
+on this vm that setpoint is too high: the box saturates around ~1.4k writes / ~3.2k reads.
+live demo targets sit under the peak so visitor kills still have cpu left.
+</p>
+
+<p>
+oracle ladder, 2026-07-21. every step kept <strong>term = 1</strong> (no leader flaps without kills)
+and <strong>0</strong> write/read errors on c1–c6. “busy” is approximate <code>100 − idle</code> from
+<code>mpstat</code> on the host.
+</p>
+
+<div class="raft-bench" role="region" aria-label="oracle loadtest ladder results">
+<table class="raft-bench__table">
+<thead>
+<tr>
+<th scope="col">step</th>
+<th scope="col">setpoint w/r</th>
+<th scope="col">delivered w/r</th>
+<th scope="col">term</th>
+<th scope="col">cpu idle</th>
+<th scope="col">≈ busy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>c0 smoke</td>
+<td>80 / 160</td>
+<td>80 / 160</td>
+<td>1 flat</td>
+<td>~49%</td>
+<td>~51%</td>
+</tr>
+<tr>
+<td>c1</td>
+<td>500 / 2000</td>
+<td>474 / 1435</td>
+<td>1 flat</td>
+<td>~10%</td>
+<td>~90%</td>
+</tr>
+<tr>
+<td>c2</td>
+<td>1000 / 4000</td>
+<td>767 / 1786</td>
+<td>1 flat</td>
+<td>~8%</td>
+<td>~92%</td>
+</tr>
+<tr>
+<td>c3</td>
+<td>1500 / 5000</td>
+<td>923 / 1872</td>
+<td>1 flat</td>
+<td>~13%</td>
+<td>~87%</td>
+</tr>
+<tr>
+<td>c4</td>
+<td>1500 / 6500</td>
+<td>972 / 2192</td>
+<td>1 flat</td>
+<td>~6%</td>
+<td>~94%</td>
+</tr>
+<tr>
+<td>c5 peak</td>
+<td>1750 / 6500</td>
+<td><strong>1413 / 3233</strong></td>
+<td>1 flat</td>
+<td>~10%</td>
+<td>~90%</td>
+</tr>
+<tr>
+<td>c6</td>
+<td>1750 / 7000</td>
+<td>1007 / 2139</td>
+<td>1 flat</td>
+<td>~5%</td>
+<td>~95%</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>
+c5 was the best sustained throughput.
+c6 asked for more and delivered less (cpu pegged / contention).
+promoted public loadgen to <strong>1400 writes / 3000 reads</strong> (below peak, kill headroom).
+hud rates move with visitors and scrape windows; treat the table as the measured ceiling, not a promise that every second hits exactly those integers.
+</p>
+
+<p>
+full method and compose live in
+<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
+(<code>deploy/compose</code>, readindex in <code>internal/raft</code> / <code>internal/kv</code>).
+</p>
 
 <h2>what this project is</h2>
 
@@ -206,7 +326,7 @@ heavily inspired by
 <div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
 </div>
 </main>
-<script src="/blog/raft-demo/raft-demo.js?v=since-loss" defer></script>
+<script src="/blog/raft-demo/raft-demo.js?v=bench-ladder" defer></script>
 <script defer src="/api/chat/widget"></script>
 </body>
 </html>
