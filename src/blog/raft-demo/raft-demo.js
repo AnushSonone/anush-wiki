@@ -6,9 +6,6 @@
   "use strict";
 
   const KILL_COOLDOWN_MS = 2000;
-  // Auto-heal (~10s) can restore quorum in under a second after a kill streak;
-  // keep the banner visible long enough to notice.
-  const QUORUM_LOSS_HOLD_MS = 6000;
 
   const root = document.getElementById("raft-lab");
   if (!root) return;
@@ -30,8 +27,6 @@
   let killReadyAt = 0;
   let cooldownTimer = null;
   let killInFlight = false;
-  let quorumLossUntil = 0;
-  let quorumHoldTimer = null;
 
   function setToast(msg, opts) {
     if (!toastEl) return;
@@ -112,14 +107,10 @@
     if (hudEl) hudEl.hidden = false;
   }
 
-  function quorumLossActive(snap) {
-    return !snap.quorum || Date.now() < quorumLossUntil;
-  }
-
   function renderNodes(snap) {
     if (!nodesEl) return;
     const nodes = snap.nodes || [];
-    const loss = quorumLossActive(snap);
+    const loss = !snap.quorum;
     nodesEl.innerHTML = nodes
       .map((n) => {
         const alive = !!n.running && !n.partitioned;
@@ -171,25 +162,8 @@
   function applySnapshot(snap) {
     lastSnapshot = snap;
     renderHud(snap);
-
-    if (!snap.quorum) {
-      quorumLossUntil = Date.now() + QUORUM_LOSS_HOLD_MS;
-      if (quorumHoldTimer) clearTimeout(quorumHoldTimer);
-      quorumHoldTimer = setTimeout(function () {
-        quorumHoldTimer = null;
-        if (lastSnapshot && lastSnapshot.quorum && Date.now() >= quorumLossUntil) {
-          renderNodes(lastSnapshot);
-          setLive(
-            true,
-            "live · term " + (lastSnapshot.term || "?") + " · leader " + (lastSnapshot.leaderId || "?")
-          );
-        }
-      }, QUORUM_LOSS_HOLD_MS + 50);
-    }
-
     renderNodes(snap);
-
-    if (quorumLossActive(snap)) {
+    if (!snap.quorum) {
       setLive(false, "no quorum · need 4 of 7 alive");
     } else {
       setLive(true, "live · term " + (snap.term || "?") + " · leader " + (snap.leaderId || "?"));
