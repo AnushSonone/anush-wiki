@@ -74,6 +74,10 @@
   font-size: 0.95rem;
 }
 
+.raft-lab__toast.is-cooldown {
+  color: #b00000;
+}
+
 .raft-lab__status {
   display: inline-flex;
   align-items: center;
@@ -329,6 +333,10 @@
   font-size: 0.95rem;
   color: var(--rl-muted);
   min-height: 1.35em;
+}
+
+.raft-lab__toast.is-cooldown {
+  color: #b00000;
 }
 
 .raft-lab__observability {

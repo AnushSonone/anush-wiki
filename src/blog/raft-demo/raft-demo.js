@@ -5,7 +5,7 @@
 (function () {
   "use strict";
 
-  const KILL_COOLDOWN_MS = 5000;
+  const KILL_COOLDOWN_MS = 2000;
 
   const root = document.getElementById("raft-lab");
   if (!root) return;
@@ -29,8 +29,12 @@
   let cooldownTimer = null;
   let killInFlight = false;
 
-  function setToast(msg) {
-    if (toastEl) toastEl.textContent = msg || "";
+  function setToast(msg, opts) {
+    if (!toastEl) return;
+    const text = msg || "";
+    toastEl.textContent = text;
+    const cooldown = !!(opts && opts.cooldown) || /^wait /.test(text);
+    toastEl.classList.toggle("is-cooldown", cooldown);
   }
 
   function cooldownRemainingMs() {
@@ -61,11 +65,9 @@
       if (toastEl && /^wait /.test(toastEl.textContent || "")) {
         setToast("");
       }
-      if (lastSnapshot) renderNodes(lastSnapshot);
       return;
     }
-    setToast(formatCooldownWait(left));
-    if (lastSnapshot) renderNodes(lastSnapshot);
+    setToast(formatCooldownWait(left), { cooldown: true });
   }
 
   function startKillCooldown(ms) {
@@ -109,9 +111,6 @@
   function renderNodes(snap) {
     if (!nodesEl) return;
     const nodes = snap.nodes || [];
-    const coolLeft = cooldownRemainingMs();
-    const cooling = coolLeft > 0 || killInFlight;
-    const coolLabel = coolLeft > 0 ? formatCooldownWait(coolLeft) : "kill";
     nodesEl.innerHTML = nodes
       .map((n) => {
         const alive = !!n.running && !n.partitioned;
@@ -125,8 +124,6 @@
         ]
           .filter(Boolean)
           .join(" ");
-        const disabled = !alive || cooling;
-        const label = alive && coolLeft > 0 ? coolLabel : "kill";
         return (
           '<div class="' +
           cls +
@@ -149,10 +146,8 @@
           '<button type="button" class="raft-lab__kill" data-kill="' +
           n.id +
           '" ' +
-          (disabled ? "disabled " : "") +
-          ">" +
-          label +
-          "</button>" +
+          (alive ? "" : "disabled ") +
+          ">kill</button>" +
           "</div>"
         );
       })
@@ -209,13 +204,12 @@
 
     const left = cooldownRemainingMs();
     if (left > 0) {
-      setToast(formatCooldownWait(left));
+      setToast(formatCooldownWait(left), { cooldown: true });
       return;
     }
     if (killInFlight) return;
 
     killInFlight = true;
-    if (lastSnapshot) renderNodes(lastSnapshot);
     setToast("killing machine " + id + "…");
     try {
       const res = await fetch(API + "/nodes/" + id + "/kill", { method: "POST" });
@@ -235,7 +229,6 @@
       setToast("kill failed: network error");
     } finally {
       killInFlight = false;
-      if (cooldownRemainingMs() <= 0 && lastSnapshot) renderNodes(lastSnapshot);
     }
   });
 
