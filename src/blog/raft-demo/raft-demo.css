@@ -111,17 +111,17 @@
   min-height: 16rem;
 }
 
-.raft-lab__quorum-loss {
-  margin: 0 0 1.25rem;
-  color: #b00000;
-  font-size: 1.65rem;
-  letter-spacing: 0.02em;
-  text-align: center;
-  width: 100%;
+.raft-lab__node.is-quorum-loss {
+  background: #ffe8e8;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
-.raft-lab__quorum-loss[hidden] {
-  display: none;
+.raft-lab__node-quorum {
+  color: #b00000;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  margin: 0.15rem 0 0.1rem;
 }
 
 @media (min-width: 720px) {

@@ -23,7 +23,6 @@
   const writesEl = root.querySelector("[data-writes]");
   const readsEl = root.querySelector("[data-reads]");
   const hudEl = root.querySelector("[data-hud]");
-  const quorumLossEl = root.querySelector("[data-quorum-loss]");
 
   let lastSnapshot = null;
   let es = null;
@@ -113,9 +112,14 @@
     if (hudEl) hudEl.hidden = false;
   }
 
+  function quorumLossActive(snap) {
+    return !snap.quorum || Date.now() < quorumLossUntil;
+  }
+
   function renderNodes(snap) {
     if (!nodesEl) return;
     const nodes = snap.nodes || [];
+    const loss = quorumLossActive(snap);
     nodesEl.innerHTML = nodes
       .map((n) => {
         const alive = !!n.running && !n.partitioned;
@@ -126,9 +130,13 @@
           isLeader ? "is-leader" : "",
           !alive ? "is-dead" : "",
           n.partitioned ? "is-partitioned" : "",
+          loss ? "is-quorum-loss" : "",
         ]
           .filter(Boolean)
           .join(" ");
+        const quorumLine = loss
+          ? '<div class="raft-lab__node-quorum">quorum loss!</div>'
+          : "";
         return (
           '<div class="' +
           cls +
@@ -137,6 +145,7 @@
           n.id +
           (isLeader ? " · leader" : "") +
           "</div>" +
+          quorumLine +
           '<div class="raft-lab__node-role">' +
           role +
           "</div>" +
@@ -159,17 +168,9 @@
       .join("");
   }
 
-  function showQuorumLossUI(show) {
-    if (quorumLossEl) quorumLossEl.hidden = !show;
-    if (show) {
-      setLive(false, "no quorum · need 4 of 7 alive");
-    }
-  }
-
   function applySnapshot(snap) {
     lastSnapshot = snap;
     renderHud(snap);
-    renderNodes(snap);
 
     if (!snap.quorum) {
       quorumLossUntil = Date.now() + QUORUM_LOSS_HOLD_MS;
@@ -177,24 +178,22 @@
       quorumHoldTimer = setTimeout(function () {
         quorumHoldTimer = null;
         if (lastSnapshot && lastSnapshot.quorum && Date.now() >= quorumLossUntil) {
-          showQuorumLossUI(false);
+          renderNodes(lastSnapshot);
           setLive(
             true,
             "live · term " + (lastSnapshot.term || "?") + " · leader " + (lastSnapshot.leaderId || "?")
           );
         }
       }, QUORUM_LOSS_HOLD_MS + 50);
-      showQuorumLossUI(true);
-      return;
     }
 
-    if (Date.now() < quorumLossUntil) {
-      showQuorumLossUI(true);
-      return;
-    }
+    renderNodes(snap);
 
-    showQuorumLossUI(false);
-    setLive(true, "live · term " + (snap.term || "?") + " · leader " + (snap.leaderId || "?"));
+    if (quorumLossActive(snap)) {
+      setLive(false, "no quorum · need 4 of 7 alive");
+    } else {
+      setLive(true, "live · term " + (snap.term || "?") + " · leader " + (snap.leaderId || "?"));
+    }
   }
 
   function connect() {
