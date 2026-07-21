@@ -5,6 +5,8 @@
 (function () {
   "use strict";
 
+  const KILL_COOLDOWN_MS = 5000;
+
   const root = document.getElementById("raft-lab");
   if (!root) return;
 
@@ -23,9 +25,55 @@
   let lastSnapshot = null;
   let es = null;
   let reconnectTimer = null;
+  let killReadyAt = 0;
+  let cooldownTimer = null;
+  let killInFlight = false;
 
   function setToast(msg) {
     if (toastEl) toastEl.textContent = msg || "";
+  }
+
+  function cooldownRemainingMs() {
+    return Math.max(0, killReadyAt - Date.now());
+  }
+
+  function formatCooldownWait(ms) {
+    if (ms <= 0) return "wait 0s";
+    if (ms >= 1000) return "wait " + Math.ceil(ms / 1000) + "s";
+    return "wait " + (ms / 1000).toFixed(1) + "s";
+  }
+
+  function parseRetryMs(text) {
+    const m = /retry in (\d+)ms/i.exec(text || "");
+    if (!m) return null;
+    const n = parseInt(m[1], 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function tickCooldown() {
+    const left = cooldownRemainingMs();
+    if (left <= 0) {
+      killReadyAt = 0;
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+        cooldownTimer = null;
+      }
+      if (toastEl && /^wait /.test(toastEl.textContent || "")) {
+        setToast("");
+      }
+      if (lastSnapshot) renderNodes(lastSnapshot);
+      return;
+    }
+    setToast(formatCooldownWait(left));
+    if (lastSnapshot) renderNodes(lastSnapshot);
+  }
+
+  function startKillCooldown(ms) {
+    const duration = ms > 0 ? ms : KILL_COOLDOWN_MS;
+    killReadyAt = Date.now() + duration;
+    if (cooldownTimer) clearInterval(cooldownTimer);
+    tickCooldown();
+    cooldownTimer = setInterval(tickCooldown, 250);
   }
 
   function fmtUptime(ms) {
@@ -61,6 +109,9 @@
   function renderNodes(snap) {
     if (!nodesEl) return;
     const nodes = snap.nodes || [];
+    const coolLeft = cooldownRemainingMs();
+    const cooling = coolLeft > 0 || killInFlight;
+    const coolLabel = coolLeft > 0 ? formatCooldownWait(coolLeft) : "kill";
     nodesEl.innerHTML = nodes
       .map((n) => {
         const alive = !!n.running && !n.partitioned;
@@ -74,6 +125,8 @@
         ]
           .filter(Boolean)
           .join(" ");
+        const disabled = !alive || cooling;
+        const label = alive && coolLeft > 0 ? coolLabel : "kill";
         return (
           '<div class="' +
           cls +
@@ -96,8 +149,10 @@
           '<button type="button" class="raft-lab__kill" data-kill="' +
           n.id +
           '" ' +
-          (alive ? "" : "disabled ") +
-          ">kill</button>" +
+          (disabled ? "disabled " : "") +
+          ">" +
+          label +
+          "</button>" +
           "</div>"
         );
       })
@@ -125,7 +180,7 @@
     }
     es = new EventSource(API + "/stream");
     es.onopen = function () {
-      setToast("");
+      if (cooldownRemainingMs() <= 0) setToast("");
     };
     es.onmessage = function (ev) {
       try {
@@ -151,20 +206,36 @@
     if (!btn || !(btn instanceof HTMLButtonElement)) return;
     const id = btn.getAttribute("data-kill");
     if (!id) return;
-    btn.disabled = true;
+
+    const left = cooldownRemainingMs();
+    if (left > 0) {
+      setToast(formatCooldownWait(left));
+      return;
+    }
+    if (killInFlight) return;
+
+    killInFlight = true;
+    if (lastSnapshot) renderNodes(lastSnapshot);
     setToast("killing machine " + id + "…");
     try {
       const res = await fetch(API + "/nodes/" + id + "/kill", { method: "POST" });
       const text = await res.text();
+      if (res.status === 429) {
+        const retry = parseRetryMs(text);
+        startKillCooldown(retry != null ? retry : KILL_COOLDOWN_MS);
+        return;
+      }
       if (!res.ok) {
-        setToast(text || "kill failed (" + res.status + ")");
-        btn.disabled = false;
+        setToast("kill failed");
         return;
       }
       setToast("machine " + id + " killed");
+      startKillCooldown(KILL_COOLDOWN_MS);
     } catch (err) {
       setToast("kill failed: network error");
-      btn.disabled = false;
+    } finally {
+      killInFlight = false;
+      if (cooldownRemainingMs() <= 0 && lastSnapshot) renderNodes(lastSnapshot);
     }
   });
 
