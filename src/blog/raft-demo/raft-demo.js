@@ -20,6 +20,8 @@
   const sinceLossEl = root.querySelector("[data-since-loss]");
   const writesEl = root.querySelector("[data-writes]");
   const readsEl = root.querySelector("[data-reads]");
+  const hostCpuEl = root.querySelector("[data-host-cpu]");
+  const hostMemEl = root.querySelector("[data-host-mem]");
   const hudEl = root.querySelector("[data-hud]");
 
   let lastSnapshot = null;
@@ -95,6 +97,28 @@
     return Math.round(n).toString();
   }
 
+  function fmtCpuPct(n) {
+    if (n == null || Number.isNaN(n)) return "-";
+    return Math.round(n) + "%";
+  }
+
+  function fmtBytes(n) {
+    if (n == null || Number.isNaN(n) || n < 0) return "-";
+    const gib = n / (1024 * 1024 * 1024);
+    if (gib >= 10) return gib.toFixed(0) + " GiB";
+    if (gib >= 1) return gib.toFixed(1) + " GiB";
+    const mib = n / (1024 * 1024);
+    if (mib >= 1) return Math.round(mib) + " MiB";
+    return Math.round(n / 1024) + " KiB";
+  }
+
+  function fmtMemPair(used, total) {
+    if (used == null || total == null || Number.isNaN(used) || Number.isNaN(total)) {
+      return "-";
+    }
+    return fmtBytes(used) + " / " + fmtBytes(total);
+  }
+
   function setLive(live, text) {
     if (dotEl) dotEl.classList.toggle("is-live", !!live);
     if (statusEl) statusEl.textContent = text;
@@ -110,6 +134,13 @@
     }
     if (writesEl) writesEl.textContent = fmtRate(snap.writesPerSec);
     if (readsEl) readsEl.textContent = fmtRate(snap.readsPerSec);
+    if (hostCpuEl) hostCpuEl.textContent = fmtCpuPct(snap.hostCpuBusyPct);
+    if (hostMemEl) {
+      hostMemEl.textContent = fmtMemPair(
+        snap.hostMemUsedBytes,
+        snap.hostMemTotalBytes
+      );
+    }
     if (hudEl) hudEl.hidden = false;
   }
 
@@ -176,16 +207,47 @@
     }
   }
 
+  /** One-shot JSON snapshot (same payload as SSE frames). */
+  async function pullSnapshot() {
+    try {
+      const res = await fetch(API + "/nodes", { cache: "no-store" });
+      if (!res.ok) return false;
+      applySnapshot(await res.json());
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  let pollTimer = null;
+  let sseAlive = false;
+
+  function startPoll() {
+    if (pollTimer) return;
+    pollTimer = setInterval(function () {
+      pullSnapshot();
+    }, 1000);
+  }
+
+  function stopPoll() {
+    if (!pollTimer) return;
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
   function connect() {
     if (es) {
       es.close();
       es = null;
     }
+    sseAlive = false;
     es = new EventSource(API + "/stream");
     es.onopen = function () {
       if (cooldownRemainingMs() <= 0) setToast("");
     };
     es.onmessage = function (ev) {
+      sseAlive = true;
+      stopPoll();
       try {
         applySnapshot(JSON.parse(ev.data));
       } catch (_) {
@@ -193,14 +255,20 @@
       }
     };
     es.onerror = function () {
-      setLive(false, "offline");
+      sseAlive = false;
+      startPoll();
+      setLive(false, lastSnapshot ? "reconnecting…" : "offline");
       if (hudEl) hudEl.hidden = false;
-      if (usersEl) usersEl.textContent = "-";
+      if (!lastSnapshot && usersEl) usersEl.textContent = "-";
       es.close();
       es = null;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = setTimeout(connect, 2000);
     };
+    // Next rewrites sometimes buffer SSE; poll until the first frame lands.
+    setTimeout(function () {
+      if (!sseAlive) startPoll();
+    }, 1200);
   }
 
   root.addEventListener("click", async function (ev) {
@@ -240,7 +308,7 @@
     }
   });
 
-  // Offline shell until first SSE frame.
+  // Offline shell until first snapshot (JSON or SSE).
   setLive(false, "connecting…");
   if (nodesEl) {
     nodesEl.innerHTML = Array.from({ length: 7 }, (_, i) => {
@@ -257,5 +325,6 @@
       );
     }).join("");
   }
+  pullSnapshot();
   connect();
 })();

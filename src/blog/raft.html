@@ -7,21 +7,21 @@
 <link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
 <link href="https://anush.wiki/blog/raft" rel="canonical"/>
 <title>come kill my cluster! - anush sonone</title>
-<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." name="description"/>
+<meta content="a from-scratch raft kv you can kill live: seven machines, readindex reads, and measured load on a 4-ocpu oracle host." name="description"/>
 <meta content="anush sonone" name="author"/>
 <meta content="article" property="og:type"/>
 <meta content="come kill my cluster! - anush sonone" property="og:title"/>
-<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." property="og:description"/>
+<meta content="a from-scratch raft kv you can kill live: seven machines, readindex reads, and measured load on a 4-ocpu oracle host." property="og:description"/>
 <meta content="https://anush.wiki/blog/raft" property="og:url"/>
 <meta content="anush.wiki" property="og:site_name"/>
 <meta content="https://anush.wiki/about/selfie.jpeg" property="og:image"/>
 <meta content="summary_large_image" name="twitter:card"/>
 <meta content="come kill my cluster! - anush sonone" name="twitter:title"/>
-<meta content="a from-scratch raft kv with a live chaos dashboard on this page, plus notes on consensus and grpc." name="twitter:description"/>
+<meta content="a from-scratch raft kv you can kill live: seven machines, readindex reads, and measured load on a 4-ocpu oracle host." name="twitter:description"/>
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <meta content="2026-07-18" property="article:published_time"/>
 <link href="../styles.css" rel="stylesheet"/>
-<link href="/blog/raft-demo/raft-demo.css?v=bench-ladder" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=host-stats-2026-07-21" rel="stylesheet"/>
 </head>
 <body class="page-blog">
 <a class="skip-link" href="#main">skip to content</a>
@@ -40,17 +40,19 @@
 <article class="blog-article" id="article">
 <h1>come kill my cluster!</h1>
 <p class="article-meta">
-<time datetime="2026-07-18">jul 18, 2026</time> · by anush sonone
+<time datetime="2026-07-18">jul 18, 2026</time> · updated <time datetime="2026-07-21">jul 21, 2026</time> · by anush sonone
 </p>
 
 <p>
-this is a from-scratch raft key-value store you can break on purpose.
-the dashboard below is the public surface for that cluster.
+this is a from-scratch
+<a href="https://github.com/AnushSonone/kill-my-cluster">raft key-value store</a>
+you can break on purpose.
+seven dockerized machines replicate a log over grpc; a whitelist control plane lets you kill one and watch election, catch-up, and silent heal.
 </p>
 
 <p>
-the dashboard talks to a hosted seven-machine raft cluster.
-kill a machine and watch election and catch-up; loadgen keeps writes and reads moving.
+the dashboard below is the public surface. loadgen keeps real writes and linearizable reads moving on an oracle aarch64 vm (4 ocpu).
+prefer killing the <strong>leader</strong>. machines come back on their own (~10s). about one kill every 2 seconds per computer.
 </p>
 
 <section id="raft-lab" class="raft-lab" aria-label="cluster dashboard" data-api-base="/api/raft">
@@ -65,13 +67,16 @@ kill a machine and watch election and catch-up; loadgen keeps writes and reads m
 <div><dt>since loss</dt><dd data-since-loss title="time since last quorum loss">-</dd></div>
 <div><dt>writes/s</dt><dd data-writes>-</dd></div>
 <div><dt>reads/s</dt><dd data-reads>-</dd></div>
+<div><dt>vm cpu</dt><dd data-host-cpu title="host CPU busy % (node_exporter)">-</dd></div>
+<div><dt>vm mem</dt><dd data-host-mem title="host memory used / total">-</dd></div>
 </dl>
 </div>
 
 <p class="raft-lab__hint">
-seven machines show role, term, and commit index.
-prefer killing the leader. machines come back on their own.
-each visitor can kill about once every 2 seconds from the same computer.
+role, term, and commit index per machine. quorum needs 4 of 7 alive.
+hud writes/reads are leader-only rates from prometheus (join on scrape instance).
+vm cpu/mem are the cloud (or docker) host via node_exporter, not per raft node.
+uptime is control-plane process age; since loss is time since the last quorum true→false.
 </p>
 
 <div class="raft-lab__nodes" data-nodes></div>
@@ -84,7 +89,7 @@ each visitor can kill about once every 2 seconds from the same computer.
 <a href="https://raft-grafana.anush.wiki/d/kmc-overview/kill-my-cluster" rel="noopener noreferrer" target="_blank" data-grafana-link>open grafana</a>
 </div>
 <p class="raft-lab__obs-note">
-leader, term, commit index, writes/s, and reads/s from the live nodes.
+leader, term, commit index, writes/s, reads/s, plus host CPU busy % and memory from the VM.
 </p>
 <iframe
   class="raft-lab__frame"
@@ -98,38 +103,49 @@ leader, term, commit index, writes/s, and reads/s from the live nodes.
 </div>
 </section>
 
+<h2>how reads stay cheap</h2>
+
+<p>
+early builds put every get through the raft log like a write.
+at high read qps that means thousands of proposals per second, one leader, six replicas, and disk syncs: heartbeats slip, elections storm, throughput collapses.
+</p>
+
+<p>
+gets now use <strong>readindex</strong> (raft paper §6.4): the leader proves it still has a majority with a heartbeat round, waits until its local commit is applied, then serves the in-memory map.
+concurrent readers share one confirm; a short <strong>lease</strong> skips repeats.
+puts still go through the log, but concurrent puts <strong>group-commit</strong> (many entries, one fsync, one appendentries).
+</p>
+
+<p>
+that is the difference between “turn up qps and hope” and a load the cluster can hold while you kill machines.
+</p>
+
 <h2>how we load-tested it</h2>
 
 <p>
-the numbers in the hud are not marketing defaults.
-before shipping higher write/read rates to the public oracle vm, we ran a
-fixed ladder on that box (aarch64, 4 ocpu / 24 gb) after deploying
-readindex + propose batching so gets no longer append to the raft log.
-</p>
-
-<p>
-process, in order:
+hud numbers are not marketing fiction.
+before raising public loadgen on the oracle host, we laddered setpoints after readindex landed.
+pass rule: raft <strong>term flat</strong> with no kills, loadgen errors near zero, some cpu left for chaos.
 </p>
 
 <ol>
-<li>local proof that log-replicated gets + 1.5k writes / 10k reads election-stormed.</li>
-<li>ship readindex (majority heartbeat + short lease) and group-commit proposes.</li>
-<li>oracle rebuild on clean volumes; smoke at 80/160 with one kill and heal.</li>
-<li>raise loadgen only via a temporary compose override; hold each step ~3 minutes.</li>
-<li>pass = raft term flat (no storm without kills), loadgen errors ~0, some headroom on cpu.</li>
-<li>promote the last honest rate into the oracle overlay (rollback: revert that commit).</li>
+<li>prove log-replicated gets + 1.5k writes / 10k reads election-storm locally.</li>
+<li>ship readindex + lease + propose batching.</li>
+<li>rebuild oracle on clean volumes; smoke at 80/160 with one kill and heal.</li>
+<li>raise loadgen via a temporary override only; hold each step ~3 minutes.</li>
+<li>promote an honest rate under the measured peak (rollback: one git revert).</li>
 </ol>
 
 <p>
-we asked for 1.5k writes / 10k reads as an aspiration.
-on this vm that setpoint is too high: the box saturates around ~1.4k writes / ~3.2k reads.
-live demo targets sit under the peak so visitor kills still have cpu left.
+aspiration was 1.5k writes / 10k reads.
+on this 4 ocpu box that is too high: saturation sits around ~1.4k writes / ~3.2k reads.
+public loadgen is set to <strong>1400 writes / 3000 reads</strong> so kills still have headroom.
+followers can lag by hundreds of commit indexes under load; that is normal catch-up, not “zero drift.”
 </p>
 
 <p>
-oracle ladder, 2026-07-21. every step kept <strong>term = 1</strong> (no leader flaps without kills)
-and <strong>0</strong> write/read errors on c1–c6. “busy” is approximate <code>100 − idle</code> from
-<code>mpstat</code> on the host.
+oracle ladder, 2026-07-21. every step kept <strong>term = 1</strong> and <strong>0</strong> write/read errors on c1–c6.
+“busy” ≈ <code>100 − idle</code> from host <code>mpstat</code>.
 </p>
 
 <div class="raft-bench" role="region" aria-label="oracle loadtest ladder results">
@@ -206,45 +222,33 @@ and <strong>0</strong> write/read errors on c1–c6. “busy” is approximate <
 </div>
 
 <p>
-c5 was the best sustained throughput.
-c6 asked for more and delivered less (cpu pegged / contention).
-promoted public loadgen to <strong>1400 writes / 3000 reads</strong> (below peak, kill headroom).
-hud rates move with visitors and scrape windows; treat the table as the measured ceiling, not a promise that every second hits exactly those integers.
-</p>
-
-<p>
-full method and compose live in
-<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
-(<code>deploy/compose</code>, readindex in <code>internal/raft</code> / <code>internal/kv</code>).
+c5 was the best sustained throughput. c6 asked for more and delivered less (cpu pegged).
+hud rates move with scrape windows and visitors; the table is the measured ceiling, not a guarantee every second matches those integers.
+code and compose:
+<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>.
 </p>
 
 <h2>what this project is</h2>
 
 <p>
 <a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
-is a custom raft kv written in go.
-it runs seven dockerized machines with a whitelist control plane for kill, partition, and heal.
+is a custom raft kv in go: wal + snapshots, election and replication, replicated map with exactly-once client ids, whitelist kill/partition/heal + sse, prometheus, grafana, and loadgen.
 </p>
 
 <p>
-grafana and prometheus sit under the demo so you can see leader, term, commit index, and applies move on real processes.
-the teaching beat is killing the leader and watching the group elect and catch up.
+edge is cloudflare tunnel; this page is the ui (vercel). there is no separate demo hostname.
+the teaching beat is still: kill the leader, watch the group elect and catch up, keep traffic honest under load.
 </p>
 
 <h2>learn raft</h2>
 
 <p>
 if raft is new, start with
-<a href="https://thesecretlivesofdata.com/raft/" rel="noopener noreferrer" target="_blank">the secret lives of data</a>.
-it walks through election and log replication with an interactive timeline.
-</p>
-
-<p>
-then read
-<a href="https://raft.github.io/raft.pdf" rel="noopener noreferrer" target="_blank">in search of an understandable consensus algorithm</a>.
-the hub at
-<a href="https://raft.github.io/" rel="noopener noreferrer" target="_blank">raft.github.io</a>
-collects talks and links.
+<a href="https://thesecretlivesofdata.com/raft/" rel="noopener noreferrer" target="_blank">the secret lives of data</a>,
+then
+<a href="https://raft.github.io/raft.pdf" rel="noopener noreferrer" target="_blank">in search of an understandable consensus algorithm</a>
+and
+<a href="https://raft.github.io/" rel="noopener noreferrer" target="_blank">raft.github.io</a>.
 </p>
 
 <p>
@@ -262,15 +266,11 @@ collects talks and links.
 <h2>learn grpc</h2>
 
 <p>
-the nodes talk with
+nodes talk with
 <a href="https://grpc.io/docs/what-is-grpc/introduction/" rel="noopener noreferrer" target="_blank">grpc</a>
-over http/2, using
-<a href="https://protobuf.dev/" rel="noopener noreferrer" target="_blank">protocol buffers</a>
-for the messages.
-</p>
-
-<p>
-good starting docs:
+over http/2 and
+<a href="https://protobuf.dev/" rel="noopener noreferrer" target="_blank">protocol buffers</a>.
+start with
 <a href="https://grpc.io/docs/what-is-grpc/core-concepts/" rel="noopener noreferrer" target="_blank">core concepts</a>
 and the
 <a href="https://grpc.io/docs/languages/go/quickstart/" rel="noopener noreferrer" target="_blank">go quickstart</a>.
@@ -291,28 +291,25 @@ and the
 <h2>how the repo maps</h2>
 
 <p>
-<code>internal/storage</code> is the wal and snapshots.
-<code>internal/raft</code> is election and replication.
-<code>internal/kv</code> is the replicated map with exactly-once client ids.
+<code>internal/storage</code> wal and snapshots.
+<code>internal/raft</code> election, replication, readindex, propose batching.
+<code>internal/kv</code> replicated map + exactly-once client ids.
+<code>internal/controlplane</code> whitelist kill, partition, heal, sse.
+<code>deploy/compose</code> seven nodes + prometheus + grafana + loadgen.
 </p>
 
 <p>
-<code>internal/controlplane</code> is whitelist kill, partition, heal, and sse.
-<code>deploy/compose</code> runs the seven nodes plus prometheus and grafana.
-locally that is control plane <code>:8080</code>, grafana <code>:3001</code>, and prometheus <code>:9090</code>.
-the public ui is this page, not a separate demo host.
+local ports: control plane <code>:8080</code>, grafana <code>:3001</code>, prometheus <code>:9090</code>.
+public ui is this page only.
 </p>
 
 <h2>suggested path</h2>
 
 <ol>
-<li>skim the dashboard above so the controls are familiar.</li>
-<li>watch the raft talk, then skim the paper.</li>
-<li>watch grpc in five minutes.</li>
-<li>clone
-<a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>
-and run compose when you want the real cluster.</li>
-<li>read <code>internal/raft/node.go</code> with the paper open beside it.</li>
+<li>use the dashboard: kill the leader, watch term and commit indexes.</li>
+<li>read “how reads stay cheap,” then skim the ladder table.</li>
+<li>watch the raft talk; skim the paper (§5–§6, especially readindex).</li>
+<li>clone the repo, run compose, open <code>internal/raft/node.go</code> and <code>batch.go</code> beside the paper.</li>
 </ol>
 </article>
 <div class="site-chrome">
@@ -326,7 +323,7 @@ heavily inspired by
 <div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
 </div>
 </main>
-<script src="/blog/raft-demo/raft-demo.js?v=bench-ladder" defer></script>
+<script src="/blog/raft-demo/raft-demo.js?v=host-stats-2026-07-21" defer></script>
 <script defer src="/api/chat/widget"></script>
 </body>
 </html>
