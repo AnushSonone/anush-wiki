@@ -6,6 +6,7 @@ Wiki assistant (**optional**, first-party embed + API): architecture, quotas, co
 
 ## Open (highest priority first)
 
+- [ ] **Raft page rewrite (humble-builder voice):** Restructure `src/blog/raft.html` for a reader who does not already know Raft — hook, live lab, then what it is / the problem it mocks / the solution / a step-by-step build story including the two outages / what it measures today / open gaps / resources at the bottom. Voice follows `lib/assistant-system-prompt.txt` (plain verbs, numbers first, no hype, lowercase) and the no-bold rule; prose carries the explanation and lists are reserved for checklists, reference collections, and step-by-step guidance. Includes a new inline `raft-arch` system diagram (SVG, own `--ra-*` tokens, scrolls inside `.raft-arch-wrap` on narrow screens) built clean rather than reviving the 2026-07-21 version that was rejected for overlapping edges. `.raft-lab__obs-note` lost its `max-width: 40rem` so the grafana note spans the full lab width. Throughput copy corrected to the measured ~1,160 w/s + ~1,500 r/s under CPU caps; the 2026-07-21 ladder stays as dated history. Branch `raft-page-humble-rewrite`, localhost review only, no commit or push until Anush asks.
 - [ ] **Proofread:** Confirm internship dates, GitHub username, résumé PDF URL.
 - [ ] **Deploy:** Host wiki + assistant (Next build from repo root per `README.md`; static-only export cannot serve `/api/chat`) and verify routes on production.
 

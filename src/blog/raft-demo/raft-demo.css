@@ -374,10 +374,12 @@
   font-size: 0.95rem;
 }
 
+/* Full width of the lab, matching the iframe below it. A max-width here wrapped
+   the note about two thirds across and left a ragged gap beside the frame. */
 .raft-lab__obs-note {
   margin: 0 0 0.85rem;
   color: var(--rl-muted);
-  max-width: 40rem;
+  max-width: none;
 }
 
 .raft-lab__frame {
@@ -395,6 +397,74 @@
 }
 
 /* Loadtest ladder table (below the live lab, still wider than blog column). */
+/* Architecture diagram. Lives in the article body, outside .raft-lab, so it
+   carries its own tokens. Wider than the 37.5rem blog column; scrolls rather
+   than shrinking on narrow screens, where 12px labels would stop being legible. */
+.raft-arch-wrap {
+  width: min(52rem, calc(100vw - 2rem));
+  max-width: min(52rem, calc(100vw - 2rem));
+  margin: 1.75rem 0 1rem;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow-x: auto;
+}
+
+.raft-arch {
+  --ra-ink: var(--ink, #000000);
+  --ra-line: var(--hairline, #cccccc);
+  --ra-muted: #444444;
+
+  display: block;
+  width: 100%;
+  min-width: 34rem;
+  height: auto;
+  font-family: inherit;
+}
+
+.raft-arch__box {
+  fill: none;
+  stroke: var(--ra-line);
+  stroke-width: 1;
+}
+
+.raft-arch__zone {
+  stroke: var(--ra-line);
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+}
+
+.raft-arch__edge {
+  fill: none;
+  stroke: var(--ra-line);
+  stroke-width: 1.25;
+}
+
+.raft-arch__arrow {
+  fill: var(--ra-line);
+}
+
+.raft-arch__dot {
+  fill: none;
+  stroke: var(--ra-ink);
+  stroke-width: 1.25;
+}
+
+.raft-arch__dot--leader {
+  fill: var(--ra-ink);
+}
+
+.raft-arch__title {
+  fill: var(--ra-ink);
+  font-size: 15px;
+}
+
+.raft-arch__sub,
+.raft-arch__edge-label {
+  fill: var(--ra-muted);
+  font-size: 12px;
+}
+
 .raft-bench {
   box-sizing: border-box;
   margin: 0 0 2rem;
