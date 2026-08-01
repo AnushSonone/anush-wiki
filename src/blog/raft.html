@@ -40,14 +40,12 @@
 <article class="blog-article" id="article">
 <h1>come kill my cluster!</h1>
 <p class="article-meta">
-<time datetime="2026-07-18">jul 18, 2026</time> · updated <time datetime="2026-07-30">jul 30, 2026</time> · by anush sonone
+<time datetime="2026-07-18">jul 18, 2026</time> · updated <time datetime="2026-08-01">aug 1, 2026</time> · by anush sonone
 </p>
 
 <p>
 try to kill my cluster! :)
 </p>
-
-<h2>the live cluster</h2>
 
 <section id="raft-lab" class="raft-lab" aria-label="cluster dashboard" data-api-base="/api/raft">
 <div class="raft-lab__status-row">
@@ -92,16 +90,13 @@ panel titles use a short gloss in parentheses.
 </section>
 
 <p>
-each card is one machine. it shows that machine's role, its term, and how far it has committed.
-</p>
-
-<p>
-four of the seven have to stay alive, which makes the leader the interesting kill.
+each card above is one machine, showing its role, its term, and how far it has committed.
+four of the seven have to stay alive for the cluster to keep working, which is what makes the leader the interesting one to kill.
 machines heal themselves after about ten seconds, and you get one kill every two seconds.
 </p>
 
 <p>
-one thing to watch for in the readout: writes and reads per second are the leader's, while vm cpu and vm mem are the whole host.
+in the readout at the top, writes and reads per second are the leader's alone, while vm cpu and vm mem cover the whole host.
 </p>
 
 <h2>what this is</h2>
@@ -112,48 +107,29 @@ there's no consensus library under it, so the log, the elections, the replicatio
 seven of those nodes run in docker on a single oracle vm with 4 ocpu.
 </p>
 
-<p>
-it's a demo and a learning project, not a production database.
-i wouldn't put anything you care about in it.
-</p>
-
 <h2>the problem it mocks</h2>
 
 <p>
 put your data on one machine and you've got two problems.
-the machine can die and take the data with it.
-worse, it can stay up and quietly serve wrong answers — and from the outside, those two look the same.
+the machine can die and take the data with it, or it can stay up and quietly serve wrong answers, and from the outside those two failures look identical.
 </p>
 
 <p>
-the fix: keep the data on several machines, and make them agree on the order of every change before any of them acts on it.
-that agreement is consensus, and raft is one way to reach it.
-</p>
-
-<p>
-you're probably already depending on it.
-etcd runs raft, and every kubernetes cluster keeps its entire state there. consul and cockroachdb run it too.
-</p>
-
-<p>
-this page is that shape at small scale, where the failure is a button instead of a paragraph.
+the fix is to keep the data on several machines and make them agree on the order of every change before any of them acts on it.
+that agreement is what consensus means, and raft is one way to reach it.
+you're probably already depending on it somewhere, since etcd runs raft and every kubernetes cluster keeps its entire state there, and consul and cockroachdb run it too.
 </p>
 
 <h2>how it works</h2>
 
 <p>
-start with the leader. one node holds that job, and every change goes to it first.
-the leader writes the change into its log, then ships it to the other six.
-once four of the seven have it, the change is committed and applied to the map each node keeps in memory.
+one node is the leader, and every change goes to it first.
+the leader writes the change into its log and ships it to the other six, and once four of the seven have it, the change is committed and applied to the map that each node keeps in memory.
 </p>
 
 <p>
-four is the whole trick.
-any two majorities have to share at least one node, so two conflicting decisions can never both commit.
-</p>
-
-<p>
-one more word you'll need: <strong>term</strong>. it's the election round number, and it goes up by one each time the cluster picks a new leader.
+that number four is the whole trick, because any two majorities of seven have to share at least one node, which is why two conflicting decisions can never both commit.
+the other word worth knowing is <strong>term</strong>, the election round number, which goes up by one each time the cluster picks a new leader.
 </p>
 
 <p>
@@ -225,15 +201,8 @@ here's a single write making the round trip.
 
 <p>
 the other two messages are <strong>requestvote</strong>, which is the next diagram, and <strong>installsnapshot</strong>.
-</p>
-
-<p>
-installsnapshot is for a follower that's been gone long enough that the entries it needs were already compacted away.
-the leader gives up on catching it up entry by entry and ships the whole map instead.
-</p>
-
-<p>
-that's what happens to every machine you kill here: ten seconds away at this write rate is further behind than the leader bothers to remember.
+installsnapshot is for a follower that's been gone long enough that the entries it needs were already compacted away, so the leader stops trying to catch it up entry by entry and ships the whole map instead.
+that's what happens to every machine you kill on this page, since ten seconds away at this write rate leaves it further behind than the leader bothers to remember.
 </p>
 
 <h2>what an election looks like</h2>
@@ -321,28 +290,22 @@ this is the part i got wrong first, and the part i'm most pleased with now.
 </div>
 
 <p>
-the pre-vote step in the middle isn't in the original paper — it's from the author's thesis, and skipping it cost me six days.
+the pre-vote step in the middle isn't in the original paper.
+it comes from the author's thesis, and skipping it cost me six days.
 </p>
 
 <p>
-here's what goes wrong without it.
-a node that's cut off keeps timing out, and under the naive rule every timeout raises its term.
-when it comes back, it's holding a term nobody else has seen, so the real leader stands down out of politeness and the cluster elects again.
-</p>
-
-<p>
-mine reached term 36,000 doing that on a loop, burning 87% of the cpu to commit nothing at all.
-asking first costs one round trip and makes the whole failure mode impossible.
+without it, a node that gets cut off keeps timing out, and under the naive rule every timeout raises its term.
+when that node comes back it arrives holding a term nobody else has seen, so the real leader stands down out of politeness and the cluster has to elect again.
+asking first costs one round trip and makes that failure mode impossible, which is why the version running above does it.
+i left it out at first and paid for it in july, which is the story further down.
 </p>
 
 <h2>how the pieces fit together</h2>
 
 <p>
-the cluster itself is only part of it, so read the diagram below in two halves.
-</p>
-
-<p>
-the top half is everything sitting behind the panel above: how a kill you press actually reaches a machine.
+the cluster itself is only part of the system, so the diagram below is worth reading in two halves.
+the top half is everything sitting behind the panel above, and it shows how a kill you press actually reaches a machine.
 the bottom half is what that kill does once it lands, which is where raft stops being plumbing and starts being the whole point.
 </p>
 
@@ -470,63 +433,46 @@ the bottom half is what that kill does once it lands, which is where raft stops 
 </div>
 
 <p>
-the filled dot is the leader, and the crossed ones are machines you killed.
+the filled dot is the leader and the crossed ones are machines you killed.
+the third case is the interesting one, because raft would rather refuse your write than accept it on three machines and lose it, so a cluster without a majority stops instead of guessing.
+the machines come back on their own about ten seconds later and the filled dot reappears.
 </p>
 
 <p>
-the third case is the interesting one.
-raft would rather refuse your write than take it on three machines and lose it, so a cluster with no majority stops instead of guessing.
-the machines come back on their own about ten seconds later, and the filled dot reappears.
-</p>
-
-<p>
-a note on the plumbing: node_exporter runs alongside prometheus and reports the host cpu and memory you see in the readout, and everything except the tunnel is a docker container on the same box.
+everything except the tunnel is a docker container on the same box, and node_exporter runs alongside prometheus to report the host cpu and memory you see in the readout.
 there's no separate demo hostname, so this page only ever sees what the control plane chooses to share.
 </p>
 
 <h2>how i built it</h2>
 
 <p>
-i started at the bottom, with a write-ahead log and snapshots on disk.
-nothing above that layer means much if a crash halfway through a write can corrupt the record, so it felt like the honest place to begin.
-</p>
-
-<p>
-the raft core came next, then a key-value map on top of it with per-client ids, so a retried write applies once instead of twice.
+i started at the bottom, with a write-ahead log and snapshots on disk, because nothing above that layer means much if a crash halfway through a write can corrupt the record.
+the raft core came next, and then a key-value map on top of it with per-client ids, so that a retried write applies once instead of twice.
 </p>
 
 <p>
 all of that worked, and then i made my first mistake: i sent reads through the raft log the same way as writes.
+that's technically correct, but it also means thousands of proposals a second squeezed through one leader and six disks, and on my laptop it election-stormed until throughput fell apart.
 </p>
 
 <p>
-that's technically correct. it's also thousands of proposals a second squeezed through one leader and six disks.
-on my laptop it election-stormed until throughput fell apart.
+the fix was readindex, from section 6.4 of the paper, where the leader confirms it still leads with a single round of heartbeats, waits for its own commits to land, and then answers straight from memory.
+reads stopped touching disk and the whole thing went quiet again.
 </p>
 
 <p>
-the fix was readindex, from section 6.4 of the paper.
-the leader confirms it still leads with a single round of heartbeats, waits for its own commits to land, then answers straight from memory.
-reads stopped touching disk, and the whole thing went quiet again.
-</p>
-
-<p>
-so i shipped it.
-seven containers, a control plane behind the kill buttons, load generators, prometheus, grafana, and a cloudflare tunnel.
-i ran a load ladder to find where the box actually gave out instead of picking a number that sounded impressive, and put the demo online.
+with reads sorted out, i shipped it, which meant seven containers, a control plane behind the kill buttons, load generators, prometheus, grafana, and a cloudflare tunnel.
+i ran a load ladder to find where the box actually gave out instead of picking a number that sounded impressive, and then put the demo online.
 </p>
 
 <p>
 then in july it broke for six days straight, which is the part i'd rather not have learned the hard way.
+the raft log was never being compacted, so it grew to 21.6 million entries, and every restart replayed all of them, pushing the node past 10gb of memory until the kernel killed it.
+that triggered another election, which restarted another node, and the cycle fed itself from there.
 </p>
 
 <p>
-the raft log was never being compacted, so it grew to 21.6 million entries.
-every restart replayed all of them, pushing the node past 10gb of memory until the kernel killed it — which triggered another election, which restarted another node.
-</p>
-
-<p>
-term passed 36,000.
+this was the missing pre-vote step playing out for real: term passed 36,000, and the cluster burned 87% of the cpu to commit nothing at all.
 the host got so busy that ssh barely answered, and getting back in meant racing a loop against the boot window.
 </p>
 
@@ -543,35 +489,39 @@ the fixes came from reading what actually happened rather than turning knobs:
 </ul>
 
 <p>
-the third mistake was smaller and, honestly, my favorite.
-the table that remembers client ids swept itself clean on every write, so once the load generator ran 96 workers it was scanning the whole thing constantly, on all seven nodes.
-writes fell from about 950 a second to 11.
-</p>
-
-<p>
-raft itself stayed perfectly healthy the entire time — term flat, quorum fine — which is exactly why it took me so long to find.
+the third mistake came later and was smaller, though it's honestly my favorite.
+the table that remembers client ids swept itself clean on every write, so once the load generator ran 96 workers it was scanning the whole thing constantly, on all seven nodes, and writes fell from about 950 a second to 11.
+raft itself stayed perfectly healthy throughout, with term flat and quorum fine, which is exactly why it took me so long to find.
 it looked nothing like a consensus problem because it wasn't one.
 </p>
 
 <p>
-three mistakes, two of which took the live cluster down.
-they taught me more than the parts that worked on the first try.
+the fourth mistake was the worst, and it arrived the day after i thought the cluster was finally safe.
+on july 28 a visitor killed three nodes, they healed on schedule, and the cluster then served zero writes and zero reads for forty-eight hours.
+every container stayed up and every metric stayed green the whole time, so nothing i had built to catch trouble caught anything, and it recovered only because another visitor happened to kill the wedged leader two days later.
+</p>
+
+<p>
+the reason is the part i keep coming back to.
+checkquorum asks whether the followers still answer, and they did, so pre-vote and leader stickiness went on faithfully protecting a leader that had stopped committing anything at all.
+every mechanism i added after the election storm made that zombie more stable, because all of them measured whether the cluster was alive and none of them measured whether it was making progress.
+the fix was a watchdog that deposes a leader holding uncommitted entries when the commit index stops moving for thirty seconds, and the cluster now keeps a durable log of those state changes so its worst day is reconstructable afterwards.
+</p>
+
+<p>
+that's four mistakes in all, three of which took the live cluster down, and they taught me more than the parts that worked on the first try.
 </p>
 
 <h2>what it does today</h2>
 
 <p>
-as i write this the cluster is holding about 1,160 writes and 1,500 reads a second, with the host near 73% busy across its 4 ocpu.
+as i write this the cluster is holding about 1,110 writes and 1,460 reads a second, with the host near 78% busy across its 4 ocpu.
 the readout above is the live version of those numbers, so it won't match exactly, and it dips while people are killing things.
 </p>
 
 <p>
-the load generator aims at 1,400 writes and 2,000 reads, but it backs off when errors or latency climb.
-those are ceilings it moves toward, not rates it holds regardless.
-</p>
-
-<p>
-one thing that looks alarming but isn't: followers routinely trail the leader by hundreds of commit indexes under load. that's ordinary catch-up, not drift.
+the load generator aims at 1,400 writes and 2,000 reads but backs off when errors or latency climb, so those are ceilings it moves toward rather than rates it holds regardless.
+followers routinely trail the leader by hundreds of commit indexes under load, which looks alarming but is ordinary catch-up rather than drift.
 </p>
 
 <p>
@@ -653,15 +603,15 @@ every step held term at 1 with no errors, so what ran out was cpu rather than st
 </div>
 
 <p>
-c5 was the peak. c6 asked for more and got less, which is what a saturated machine looks like from outside.
-today's rates sit below that on purpose, so kills still have headroom.
+c5 was the peak, and c6 asked for more and got less, which is what a saturated machine looks like from the outside.
+today's rates sit below that on purpose, so that kills still have headroom.
 </p>
 
 <h2>what i'd still fix</h2>
 
 <ul>
-<li>node memory drifts from about 470mb to 726mb over an hour of load, and i haven't watched it long enough to prove it flattens out.</li>
-<li>the security hardening checklist for the public endpoints is written but not finished.</li>
+<li>every healed node comes back far enough behind that the leader has to ship it the whole map. retaining enough entries to avoid that costs 20 to 50% of throughput on a node capped this small, so there's no setting that dodges both, and for now i keep the small default and pay for the snapshot on heal.</li>
+<li>the security hardening checklist for the public endpoints is most of the way through. the grafana credentials and the incident record are done, and the tunnel path restrictions and the rate limit on kills are not.</li>
 <li>reads are cheap now, but they still all go to the leader. serving them from followers would spread the work out, and i haven't built that.</li>
 <li>4 ocpu is the ceiling, and no amount of tuning changes that. forgetting it is how i got the first election storm.</li>
 </ul>
