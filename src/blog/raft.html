@@ -92,36 +92,46 @@ panel titles use a short gloss in parentheses.
 </section>
 
 <p>
-each card is one machine, showing its role, its term, and how far it has committed.
+each card is one machine. it shows that machine's role, its term, and how far it has committed.
+</p>
+
+<p>
 four of the seven have to stay alive, which makes the leader the interesting kill.
 machines heal themselves after about ten seconds, and you get one kill every two seconds.
-in the readout, writes and reads per second are the leader's, while vm cpu and vm mem are the whole host.
+</p>
+
+<p>
+one thing to watch for in the readout: writes and reads per second are the leader's, while vm cpu and vm mem are the whole host.
 </p>
 
 <h2>what this is</h2>
 
 <p>
 kill-my-cluster is a raft key-value store i wrote from scratch in go.
-no consensus library, so the log, the elections, the replication, and the read path are all mine.
+there's no consensus library under it, so the log, the elections, the replication, and the read path are all mine.
 seven of those nodes run in docker on a single oracle vm with 4 ocpu.
 </p>
 
 <p>
-it is a demo and a learning project, not a production database.
-i would not put anything you care about in it.
+it's a demo and a learning project, not a production database.
+i wouldn't put anything you care about in it.
 </p>
 
 <h2>the problem it mocks</h2>
 
 <p>
-put your data on one machine and you have two problems.
+put your data on one machine and you've got two problems.
 the machine can die and take the data with it.
-worse, it can stay up and quietly serve wrong answers, and from the outside those two look the same.
+worse, it can stay up and quietly serve wrong answers — and from the outside, those two look the same.
 </p>
 
 <p>
-the fix is to keep the data on several machines and make them agree on the order of every change before any of them acts on it.
+the fix: keep the data on several machines, and make them agree on the order of every change before any of them acts on it.
 that agreement is consensus, and raft is one way to reach it.
+</p>
+
+<p>
+you're probably already depending on it.
 etcd runs raft, and every kubernetes cluster keeps its entire state there. consul and cockroachdb run it too.
 </p>
 
@@ -132,33 +142,36 @@ this page is that shape at small scale, where the failure is a button instead of
 <h2>how it works</h2>
 
 <p>
-one node is the leader, and every change goes to it first.
-the leader writes the change into its log and ships it to the other six.
+start with the leader. one node holds that job, and every change goes to it first.
+the leader writes the change into its log, then ships it to the other six.
 once four of the seven have it, the change is committed and applied to the map each node keeps in memory.
 </p>
 
 <p>
 four is the whole trick.
-any two majorities have to share at least one node, which is why two conflicting decisions can never both commit.
-term is the election round number, and it goes up by one each time the cluster picks a new leader.
+any two majorities have to share at least one node, so two conflicting decisions can never both commit.
+</p>
+
+<p>
+one more word you'll need: <strong>term</strong>. it's the election round number, and it goes up by one each time the cluster picks a new leader.
 </p>
 
 <p>
 kill a follower and not much happens.
-kill the leader and there is a short pause while the rest elect a replacement.
+kill the leader and there's a short pause while the rest elect a replacement.
 </p>
 
 <h2>how the nodes talk</h2>
 
 <p>
 there are only three messages in the whole protocol, and the one below does almost all the work.
-here is a single write making the round trip.
+here's a single write making the round trip.
 </p>
 
 <div class="raft-arch-wrap">
 <svg class="raft-arch" viewBox="0 0 720 520" role="img" aria-labelledby="talk-title talk-desc">
 <title id="talk-title">one write, start to finish</title>
-<desc id="talk-desc">a write arrives at the leader, which appends it to its own log and flushes it to disk. the leader then sends an appendentries message to the other six containing the new entries, its term, and how far it has committed. each follower checks that the entry before this one matches what it already holds, and if so appends and flushes to disk before replying yes. once four of the seven hold the entry the leader marks it committed, and the next appendentries carries that new commit point so the followers apply it too. a heartbeat is the same message carrying no entries.</desc>
+<desc id="talk-desc">a write arrives at the leader, which appends it to its own log and flushes it to disk. the leader then sends an appendentries message to the other six containing the new entries, its term, and how far it's committed. each follower checks that the entry before this one matches what it already holds, and if so appends and flushes to disk before replying yes. once four of the seven hold the entry the leader marks it committed, and the next appendentries carries that new commit point so the followers apply it too. a heartbeat is the same message carrying no entries.</desc>
 
 <defs>
 <marker id="raft-talk-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -192,10 +205,10 @@ here is a single write making the round trip.
 <text class="raft-arch__sub" x="570" y="222" text-anchor="middle">then append and fsync</text>
 
 <line class="raft-arch__edge" x1="448" y1="262" x2="262" y2="262" marker-end="url(#raft-talk-arrow)"></line>
-<text class="raft-arch__edge-label" x="355" y="256" text-anchor="middle">4. yes, it is on my disk</text>
+<text class="raft-arch__edge-label" x="355" y="256" text-anchor="middle">4. yes, it's on my disk</text>
 
 <rect class="raft-arch__box" x="40" y="282" width="220" height="48"></rect>
-<text class="raft-arch__sub" x="150" y="302" text-anchor="middle">5. that is 4 of the 7</text>
+<text class="raft-arch__sub" x="150" y="302" text-anchor="middle">5. that's 4 of the 7,</text>
 <text class="raft-arch__sub" x="150" y="318" text-anchor="middle">so the write is committed</text>
 
 <line class="raft-arch__edge" x1="262" y1="360" x2="448" y2="360" marker-end="url(#raft-talk-arrow)"></line>
@@ -206,26 +219,33 @@ here is a single write making the round trip.
 <text class="raft-arch__sub" x="570" y="416" text-anchor="middle">where reads can finally see it</text>
 
 <text class="raft-arch__sub" x="360" y="482" text-anchor="middle">a heartbeat is this same message with no entries in it.</text>
-<text class="raft-arch__sub" x="360" y="500" text-anchor="middle">that is all a leader does to say i am still here: about seven of them a second.</text>
+<text class="raft-arch__sub" x="360" y="500" text-anchor="middle">that's all a leader does to say i'm still here: about seven of them a second.</text>
 </svg>
 </div>
 
 <p>
 the other two messages are <strong>requestvote</strong>, which is the next diagram, and <strong>installsnapshot</strong>.
-that last one is for a follower that has been gone long enough that the entries it needs were already compacted away, so the leader gives up on catching it up entry by entry and ships the whole map instead.
-that is what happens to every machine you kill here, because ten seconds away at this write rate is further behind than the leader bothers to remember.
+</p>
+
+<p>
+installsnapshot is for a follower that's been gone long enough that the entries it needs were already compacted away.
+the leader gives up on catching it up entry by entry and ships the whole map instead.
+</p>
+
+<p>
+that's what happens to every machine you kill here: ten seconds away at this write rate is further behind than the leader bothers to remember.
 </p>
 
 <h2>what an election looks like</h2>
 
 <p>
-this is the part i got wrong first, and the part i am most pleased with now.
+this is the part i got wrong first, and the part i'm most pleased with now.
 </p>
 
 <div class="raft-arch-wrap">
-<svg class="raft-arch" viewBox="0 0 720 560" role="img" aria-labelledby="vote-title vote-desc">
+<svg class="raft-arch" viewBox="0 63 720 497" role="img" aria-labelledby="vote-title vote-desc">
 <title id="vote-title">how the cluster replaces a dead leader</title>
-<desc id="vote-desc">while the leader is alive it sends an empty appendentries roughly every 150 milliseconds, and each one resets every follower's election timer. when you kill the leader those heartbeats stop. each follower is waiting a different random amount of time between 750 and 1500 milliseconds, so one of them times out first rather than all of them at once. that node does not immediately start an election: it first runs a pre-vote poll asking whether the others would vote for it, without anyone changing their term. only if it wins that poll does it increment the term and hold the real vote, and once four of the seven vote yes it becomes leader and starts heartbeating again. measured on the live cluster, that takes between 2.6 and 2.9 seconds from the moment you click.</desc>
+<desc id="vote-desc">while the leader is alive it sends an empty appendentries roughly every 150 milliseconds, and each one resets every follower's election timer. when you kill the leader those heartbeats stop. each follower is waiting a different random amount of time between 750 and 1500 milliseconds, so one of them times out first rather than all of them at once. that node doesn't immediately start an election: it first runs a pre-vote poll asking whether the others would vote for it, without anyone changing their term. only if it wins that poll does it increment the term and hold the real vote, and once four of the seven vote yes it becomes leader and starts heartbeating again. measured on the live cluster, that takes between 2.6 and 2.9 seconds from the moment you click.</desc>
 
 <circle class="raft-arch__dot raft-arch__dot--leader" cx="40" cy="90" r="8"></circle>
 <circle class="raft-arch__dot" cx="64" cy="90" r="8"></circle>
@@ -282,7 +302,7 @@ this is the part i got wrong first, and the part i am most pleased with now.
 <circle class="raft-arch__dot" cx="184" cy="390" r="8"></circle>
 <text class="raft-arch__title" x="220" y="382">it asks before it campaigns</text>
 <text class="raft-arch__sub" x="220" y="404">pre-vote: would you vote for me, if i asked? nobody changes their term to answer.</text>
-<text class="raft-arch__sub" x="220" y="420">a node that cannot win now disturbs nobody. this is the fix for the storm below.</text>
+<text class="raft-arch__sub" x="220" y="420">a node that can't win now disturbs nobody. this is the fix for the storm below.</text>
 
 <line class="raft-arch__zone" x1="40" y1="446" x2="690" y2="446"></line>
 
@@ -295,15 +315,22 @@ this is the part i got wrong first, and the part i am most pleased with now.
 <circle class="raft-arch__dot" cx="160" cy="490" r="8"></circle>
 <circle class="raft-arch__dot" cx="184" cy="490" r="8"></circle>
 <text class="raft-arch__title" x="220" y="482">it wins, and the term goes up by one</text>
-<text class="raft-arch__sub" x="220" y="504">only now does it raise the term and ask for real. four yes votes and it is the</text>
+<text class="raft-arch__sub" x="220" y="504">only now does it raise the term and ask for real. four yes votes and it's the</text>
 <text class="raft-arch__sub" x="220" y="520">leader, heartbeating. measured 2.6 to 2.9 seconds from click to new leader.</text>
 </svg>
 </div>
 
 <p>
-the pre-vote step in the middle is not in the original paper, it is from the author's thesis, and skipping it cost me six days.
-a node that is cut off keeps timing out, and under the naive rule every timeout raises its term.
-when it comes back it shows up holding a term nobody else has seen, the real leader stands down out of politeness, and the cluster elects again.
+the pre-vote step in the middle isn't in the original paper — it's from the author's thesis, and skipping it cost me six days.
+</p>
+
+<p>
+here's what goes wrong without it.
+a node that's cut off keeps timing out, and under the naive rule every timeout raises its term.
+when it comes back, it's holding a term nobody else has seen, so the real leader stands down out of politeness and the cluster elects again.
+</p>
+
+<p>
 mine reached term 36,000 doing that on a loop, burning 87% of the cpu to commit nothing at all.
 asking first costs one round trip and makes the whole failure mode impossible.
 </p>
@@ -311,8 +338,11 @@ asking first costs one round trip and makes the whole failure mode impossible.
 <h2>how the pieces fit together</h2>
 
 <p>
-the cluster itself is only part of it.
-the top half is everything sitting behind the panel above, and how a kill you press actually reaches a machine.
+the cluster itself is only part of it, so read the diagram below in two halves.
+</p>
+
+<p>
+the top half is everything sitting behind the panel above: how a kill you press actually reaches a machine.
 the bottom half is what that kill does once it lands, which is where raft stops being plumbing and starts being the whole point.
 </p>
 
@@ -365,7 +395,7 @@ the bottom half is what that kill does once it lands, which is where raft stops 
 
 <rect class="raft-arch__box" x="490" y="292" width="200" height="52"></rect>
 <text class="raft-arch__title" x="590" y="315" text-anchor="middle">load generator</text>
-<text class="raft-arch__sub" x="590" y="334" text-anchor="middle">so it is never idle</text>
+<text class="raft-arch__sub" x="590" y="334" text-anchor="middle">so it's never idle</text>
 
 <line class="raft-arch__edge" x1="80" y1="248" x2="80" y2="386" marker-end="url(#raft-arch-arrow)"></line>
 <text class="raft-arch__edge-label" x="88" y="320">kill and heal</text>
@@ -388,7 +418,7 @@ the bottom half is what that kill does once it lands, which is where raft stops 
 <text class="raft-arch__sub" x="360" y="458" text-anchor="middle">one leader, six followers, replicating over grpc</text>
 
 <line class="raft-arch__zone" x1="0" y1="500" x2="720" y2="500"></line>
-<text class="raft-arch__sub" x="2" y="492">and here is what your kill does inside those seven</text>
+<text class="raft-arch__sub" x="2" y="492">and here's what your kill does inside those seven</text>
 
 <text class="raft-arch__sub" x="360" y="524" text-anchor="middle">the rule underneath all three: a write counts only once 4 of the 7 hold it on disk</text>
 
@@ -403,7 +433,7 @@ the bottom half is what that kill does once it lands, which is where raft stops 
 <circle class="raft-arch__dot" cx="178" cy="594" r="8"></circle>
 <circle class="raft-arch__dot" cx="202" cy="594" r="8"></circle>
 <text class="raft-arch__sub" x="130" y="620" text-anchor="middle">6 of 7 still alive.</text>
-<text class="raft-arch__sub" x="130" y="636" text-anchor="middle">that is still a majority,</text>
+<text class="raft-arch__sub" x="130" y="636" text-anchor="middle">that's still a majority,</text>
 <text class="raft-arch__sub" x="130" y="652" text-anchor="middle">so writes never pause.</text>
 
 <rect class="raft-arch__box" x="260" y="540" width="200" height="120"></rect>
@@ -441,10 +471,17 @@ the bottom half is what that kill does once it lands, which is where raft stops 
 
 <p>
 the filled dot is the leader, and the crossed ones are machines you killed.
-the third case is the interesting one: raft would rather refuse your write than take it on three machines and lose it, so a cluster with no majority stops instead of guessing.
-the machines come back on their own about ten seconds later and the filled dot reappears.
-node_exporter runs alongside prometheus and reports the host cpu and memory you see in the readout, and everything except the tunnel is a docker container on the same box.
-there is no separate demo hostname, so this page only ever sees what the control plane chooses to share.
+</p>
+
+<p>
+the third case is the interesting one.
+raft would rather refuse your write than take it on three machines and lose it, so a cluster with no majority stops instead of guessing.
+the machines come back on their own about ten seconds later, and the filled dot reappears.
+</p>
+
+<p>
+a note on the plumbing: node_exporter runs alongside prometheus and reports the host cpu and memory you see in the readout, and everything except the tunnel is a docker container on the same box.
+there's no separate demo hostname, so this page only ever sees what the control plane chooses to share.
 </p>
 
 <h2>how i built it</h2>
@@ -452,13 +489,18 @@ there is no separate demo hostname, so this page only ever sees what the control
 <p>
 i started at the bottom, with a write-ahead log and snapshots on disk.
 nothing above that layer means much if a crash halfway through a write can corrupt the record, so it felt like the honest place to begin.
-the raft core came next, and then a key-value map on top of it with per-client ids, so that a retried write applies once instead of twice.
 </p>
 
 <p>
-all of that worked, and then i made my first mistake.
-i sent reads through the raft log the same way as writes.
-that is technically correct, and it is also thousands of proposals a second squeezed through one leader and six disks.
+the raft core came next, then a key-value map on top of it with per-client ids, so a retried write applies once instead of twice.
+</p>
+
+<p>
+all of that worked, and then i made my first mistake: i sent reads through the raft log the same way as writes.
+</p>
+
+<p>
+that's technically correct. it's also thousands of proposals a second squeezed through one leader and six disks.
 on my laptop it election-stormed until throughput fell apart.
 </p>
 
@@ -475,9 +517,12 @@ i ran a load ladder to find where the box actually gave out instead of picking a
 </p>
 
 <p>
-then in july it broke for six days straight, which is the part i would rather not have learned the hard way.
+then in july it broke for six days straight, which is the part i'd rather not have learned the hard way.
+</p>
+
+<p>
 the raft log was never being compacted, so it grew to 21.6 million entries.
-every restart replayed all of them, pushing the node past 10gb of memory until the kernel killed it, which triggered another election, which restarted another node.
+every restart replayed all of them, pushing the node past 10gb of memory until the kernel killed it — which triggered another election, which restarted another node.
 </p>
 
 <p>
@@ -486,17 +531,26 @@ the host got so busy that ssh barely answered, and getting back in meant racing 
 </p>
 
 <p>
-the fixes came from reading what actually happened rather than turning knobs.
-prevote, so a node that got cut off cannot disrupt a healthy leader just by raising the term.
-checkquorum, so a leader that has lost the majority steps down instead of pretending.
-then backoff before a node runs again, one replicator per follower, automatic compaction, cpu caps on every container, and load generators that ease off when the cluster is struggling instead of leaning harder.
+the fixes came from reading what actually happened rather than turning knobs:
 </p>
+
+<ul>
+<li><strong>prevote</strong>, so a node that got cut off can't disrupt a healthy leader just by raising the term.</li>
+<li><strong>checkquorum</strong>, so a leader that's lost the majority steps down instead of pretending.</li>
+<li>backoff before a node runs again, and one replicator per follower.</li>
+<li>automatic compaction, plus cpu caps on every container.</li>
+<li>load generators that ease off when the cluster is struggling, instead of leaning harder.</li>
+</ul>
 
 <p>
 the third mistake was smaller and, honestly, my favorite.
 the table that remembers client ids swept itself clean on every write, so once the load generator ran 96 workers it was scanning the whole thing constantly, on all seven nodes.
 writes fell from about 950 a second to 11.
-raft itself stayed perfectly healthy the entire time, term flat and quorum fine, which is exactly why it took me so long to find. it looked nothing like a consensus problem because it was not one.
+</p>
+
+<p>
+raft itself stayed perfectly healthy the entire time — term flat, quorum fine — which is exactly why it took me so long to find.
+it looked nothing like a consensus problem because it wasn't one.
 </p>
 
 <p>
@@ -508,13 +562,16 @@ they taught me more than the parts that worked on the first try.
 
 <p>
 as i write this the cluster is holding about 1,160 writes and 1,500 reads a second, with the host near 73% busy across its 4 ocpu.
-the readout above is the live version of those numbers, so it will not match exactly, and it dips while people are killing things.
+the readout above is the live version of those numbers, so it won't match exactly, and it dips while people are killing things.
 </p>
 
 <p>
 the load generator aims at 1,400 writes and 2,000 reads, but it backs off when errors or latency climb.
 those are ceilings it moves toward, not rates it holds regardless.
-followers routinely trail the leader by hundreds of commit indexes under load, which is ordinary catch-up rather than drift.
+</p>
+
+<p>
+one thing that looks alarming but isn't: followers routinely trail the leader by hundreds of commit indexes under load. that's ordinary catch-up, not drift.
 </p>
 
 <p>
@@ -600,19 +657,19 @@ c5 was the peak. c6 asked for more and got less, which is what a saturated machi
 today's rates sit below that on purpose, so kills still have headroom.
 </p>
 
-<h2>what i would still fix</h2>
+<h2>what i'd still fix</h2>
 
 <ul>
-<li>node memory drifts from about 470mb to 726mb over an hour of load, and i have not watched it long enough to prove it flattens out.</li>
+<li>node memory drifts from about 470mb to 726mb over an hour of load, and i haven't watched it long enough to prove it flattens out.</li>
 <li>the security hardening checklist for the public endpoints is written but not finished.</li>
-<li>reads are cheap now, but they still all go to the leader. serving them from followers would spread the work out, and i have not built that.</li>
+<li>reads are cheap now, but they still all go to the leader. serving them from followers would spread the work out, and i haven't built that.</li>
 <li>4 ocpu is the ceiling, and no amount of tuning changes that. forgetting it is how i got the first election storm.</li>
 </ul>
 
 <h2>learn more</h2>
 
 <p>
-the code is at <a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>, laid out roughly like this:
+the code's at <a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-cluster</a>, laid out roughly like this:
 </p>
 
 <ul>
@@ -624,12 +681,12 @@ the code is at <a href="https://github.com/AnushSonone/kill-my-cluster">kill-my-
 </ul>
 
 <p>
-if raft is new to you, this is the order i would go in:
+if raft's new to you, this is the order i'd go in:
 </p>
 
 <ol>
 <li>kill the leader in the panel above and watch term and commit index move.</li>
-<li>read <a href="https://thesecretlivesofdata.com/raft/" rel="noopener noreferrer" target="_blank">the secret lives of data</a>, which animates the whole algorithm in a few minutes. it is the friendliest starting point i know of.</li>
+<li>read <a href="https://thesecretlivesofdata.com/raft/" rel="noopener noreferrer" target="_blank">the secret lives of data</a>, which animates the whole algorithm in a few minutes. it's the friendliest starting point i know of.</li>
 <li>watch diego ongaro's talk below. he wrote the paper, and hearing him explain it is easier than reading it cold.</li>
 <li>then read <a href="https://raft.github.io/raft.pdf" rel="noopener noreferrer" target="_blank">the paper</a> itself, sections 5 and 6. section 6.4 is the read path i described above, and <a href="https://raft.github.io/" rel="noopener noreferrer" target="_blank">raft.github.io</a> lists other implementations if you want to compare.</li>
 <li>clone the repo, bring up compose, and read <code>internal/raft/node.go</code> with the paper open beside it.</li>
