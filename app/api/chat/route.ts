@@ -10,11 +10,11 @@ import {
   mintVisitorId,
   parseCookieHeader,
   QUOTA_COOKIE_NAME,
+  QUOTA_DAILY_CAP,
+  utcCalendarDate,
   verifyQuotaCookieValue,
 } from '../../../lib/quota-cookie';
 import { loadResumePdfPlain, loadWikiPlainSnapshot } from '../../../lib/published-context';
-import { quotaKey, releaseReservedSlot, reserveCompletionSlot, utcCalendarDate } from '../../../lib/quota-kv';
-import { getQuotaRedis, isQuotaBypassDev } from '../../../lib/quota-redis';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +24,16 @@ export const runtime = 'nodejs';
  * truncated mid-clause (finishReason MAX_TOKENS).
  */
 const ASSISTANT_MAX_OUTPUT_TOKENS = 2048;
+
+/** Dev-only escape hatch so localhost does not need a signed cookie. */
+function isQuotaBypassDev(): boolean {
+  return (
+    process.env.NODE_ENV === 'development'
+    && (process.env.QUOTA_DISABLED_LOCAL === '1'
+      || process.env.QUOTA_DISABLED_LOCAL === 'true'
+      || process.env.QUOTA_DISABLED_LOCAL === 'yes')
+  );
+}
 
 const bodySchema = z.object({
   messages: z
@@ -145,7 +155,33 @@ async function loadTextFile(limit: number, ...segments: string[]) {
   }
 }
 
-/** Prime HttpOnly quota cookie before POST (Phase A). GET does not require KV. */
+/**
+ * System prompt + grounding, built once per process. The underlying loaders cache
+ * too; this also avoids rejoining ~22k characters on every message. A redeploy is a
+ * new process, so published content changes still land.
+ */
+let systemContextPromise: Promise<string> | undefined;
+
+function buildSystemContext(): Promise<string> {
+  systemContextPromise ??= (async () => {
+    const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
+    const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
+    const resumePdfPlain = await loadResumePdfPlain(8_000);
+
+    return [
+      baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
+      'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
+      'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
+      'résumé pdf extract (plain text):\n' + resumePdfPlain,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+  })();
+
+  return systemContextPromise;
+}
+
+/** Prime the HttpOnly quota cookie before POST. */
 export async function GET(req: Request) {
   const disabled =
     process.env.DISABLE_CHAT === '1' || process.env.DISABLE_CHAT === 'true' || process.env.DISABLE_CHAT === 'yes';
@@ -179,17 +215,20 @@ export async function GET(req: Request) {
   headers.set('Content-Type', 'application/json');
 
   if (!verified.ok) {
-    const visitorId = mintVisitorId();
-    headers.append('Set-Cookie', buildQuotaSetCookieHeader(visitorId, secret));
+    headers.append(
+      'Set-Cookie',
+      buildQuotaSetCookieHeader(mintVisitorId(), utcCalendarDate(), 0, secret),
+    );
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
+/** Set on the response only when a reply actually came back from the model. */
+type QuotaCommit = { visitorId: string; day: string; next: number; secret: string };
+
 export async function POST(req: Request) {
-  let quotaRedis = null as ReturnType<typeof getQuotaRedis>;
-  let qKey: string | undefined;
-  let reservedSlot = false;
+  let quotaCommit: QuotaCommit | undefined;
 
   try {
     const disabled =
@@ -242,17 +281,6 @@ export async function POST(req: Request) {
         );
       }
 
-      quotaRedis = getQuotaRedis();
-      if (!quotaRedis) {
-        return jsonAssistant(
-          {
-            error: 'quota_store_unconfigured',
-            reply: 'the assistant is temporarily offline.',
-          },
-          { status: 503 },
-        );
-      }
-
       const rawCookie = parseCookieHeader(req.headers.get('cookie'), QUOTA_COOKIE_NAME);
       const verified = verifyQuotaCookieValue(rawCookie, secret);
       if (!verified.ok) {
@@ -266,9 +294,10 @@ export async function POST(req: Request) {
         );
       }
 
-      qKey = quotaKey(verified.visitorId, utcCalendarDate());
-      const slot = await reserveCompletionSlot(quotaRedis, qKey);
-      if (!slot.ok) {
+      const today = utcCalendarDate();
+      /** Counter is per UTC day; a cookie carrying an older day starts over. */
+      const used = verified.day === today ? verified.count : 0;
+      if (used >= QUOTA_DAILY_CAP) {
         return jsonAssistant(
           {
             error: 'quota_exhausted',
@@ -278,21 +307,12 @@ export async function POST(req: Request) {
           { status: 429 },
         );
       }
-      reservedSlot = true;
+
+      /** Only a completed reply consumes quota, so the cookie is written on success. */
+      quotaCommit = { visitorId: verified.visitorId, day: today, next: used + 1, secret };
     }
 
-    const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
-    const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
-    const resumePdfPlain = await loadResumePdfPlain(8_000);
-
-    const systemWithContext = [
-      baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
-      'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
-      'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
-      'résumé pdf extract (plain text):\n' + resumePdfPlain,
-    ]
-      .filter(Boolean)
-      .join('\n\n');
+    const systemWithContext = await buildSystemContext();
 
     const safeTurns = parsed.messages.slice(-18).map((m) => ({
       role: m.role as 'user' | 'assistant',
@@ -318,10 +338,7 @@ export async function POST(req: Request) {
         textOut = text;
       }
     } catch (cause) {
-      if (reservedSlot && quotaRedis && qKey) {
-        await releaseReservedSlot(quotaRedis, qKey).catch(() => {});
-        reservedSlot = false;
-      }
+      /** No completion, so no quota is consumed — the cookie is simply not rewritten. */
       logUpstreamFailure(cause);
       return jsonAssistant(
         {
@@ -334,11 +351,21 @@ export async function POST(req: Request) {
 
     const reply =
       stripAssistantMarkdownArtifacts((textOut || '').trim()) || '(empty model response)';
-    return jsonAssistant({ reply });
-  } catch (cause) {
-    if (reservedSlot && quotaRedis && qKey) {
-      await releaseReservedSlot(quotaRedis, qKey).catch(() => {});
+
+    const headers = new Headers();
+    if (quotaCommit) {
+      headers.append(
+        'Set-Cookie',
+        buildQuotaSetCookieHeader(
+          quotaCommit.visitorId,
+          quotaCommit.day,
+          quotaCommit.next,
+          quotaCommit.secret,
+        ),
+      );
     }
+    return jsonAssistant({ reply }, { headers });
+  } catch (cause) {
     console.error('[api/chat] unexpected failure', cause instanceof Error ? clip(cause.message, 400) : cause);
     return jsonAssistant(
       {

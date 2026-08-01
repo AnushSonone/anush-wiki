@@ -73,8 +73,24 @@ async function readWikiHtmlFiles(srcRoot: string): Promise<string[]> {
   return ordered;
 }
 
-/** Plain-text snapshot of published wiki pages from src/ (refreshes every request — no static corpus bump). */
+/**
+ * Per-process caches. A new deployment is a new process, so a redeploy still picks
+ * up content changes — but warm invocations stop re-reading every page and re-running
+ * the PDF parser on every single message.
+ */
+let wikiSnapshotCache: { maxChars: number; value: string } | null = null;
+let resumeCache: { maxChars: number; value: string } | null = null;
+
+/**
+ * Plain-text snapshot of published wiki pages from src/.
+ *
+ * Budget is per file, not one running total. A single running budget meant the
+ * longest early page consumed almost all of it and later pages were truncated or
+ * dropped entirely — the raft project page never loaded at all.
+ */
 export async function loadWikiPlainSnapshot(maxChars: number): Promise<string> {
+  if (wikiSnapshotCache?.maxChars === maxChars) return wikiSnapshotCache.value;
+
   const srcRoot = path.join(process.cwd(), 'src');
   try {
     await fs.access(srcRoot, fsConstants.R_OK);
@@ -82,10 +98,14 @@ export async function loadWikiPlainSnapshot(maxChars: number): Promise<string> {
     return '(wiki source directory unavailable.)';
   }
 
-  const files = await readWikiHtmlFiles(srcRoot);
-  let out = '';
+  const files = (await readWikiHtmlFiles(srcRoot)).filter((abs) => isInsideDir(srcRoot, abs));
+  if (files.length === 0) return '(no wiki html loaded.)';
+
+  /** Even split, with a floor so a long file list cannot starve every page. */
+  const perFile = Math.max(1200, Math.floor(maxChars / files.length));
+
+  const chunks: string[] = [];
   for (const abs of files) {
-    if (!isInsideDir(srcRoot, abs)) continue;
     const rel = path.relative(srcRoot, abs);
     let raw: string;
     try {
@@ -93,21 +113,20 @@ export async function loadWikiPlainSnapshot(maxChars: number): Promise<string> {
     } catch {
       continue;
     }
-    const plain = htmlToPlainText(raw);
+    const plain = clip(htmlToPlainText(raw), perFile);
     if (!plain) continue;
-    const chunk = `--- ${rel.replace(/\\/g, '/')} ---\n${plain}\n\n`;
-    if (out.length + chunk.length >= maxChars) {
-      out += clip(chunk, Math.max(0, maxChars - out.length));
-      break;
-    }
-    out += chunk;
+    chunks.push(`--- ${rel.replace(/\\/g, '/')} ---\n${plain}\n`);
   }
 
-  return clip(out.trim(), maxChars) || '(no wiki html loaded.)';
+  const value = clip(chunks.join('\n').trim(), maxChars) || '(no wiki html loaded.)';
+  wikiSnapshotCache = { maxChars, value };
+  return value;
 }
 
 /** Extract résumé text from the shipped PDF under src/docs/. */
 export async function loadResumePdfPlain(maxChars: number): Promise<string> {
+  if (resumeCache?.maxChars === maxChars) return resumeCache.value;
+
   const srcRoot = path.join(process.cwd(), 'src');
   const abs = path.join(srcRoot, RESUME_FILE_REL);
   if (!isInsideDir(srcRoot, abs)) return '(résumé path invalid.)';
@@ -119,11 +138,15 @@ export async function loadResumePdfPlain(maxChars: number): Promise<string> {
     return '(résumé pdf missing — rely on home page in wiki snapshot.)';
   }
 
+  let value: string;
   try {
     const parsed = await pdfParse(buf);
     const text = (parsed.text || '').replace(/\s+/g, ' ').trim();
-    return clip(text, maxChars) || '(résumé pdf had no extractable text.)';
+    value = clip(text, maxChars) || '(résumé pdf had no extractable text.)';
   } catch {
     return '(résumé pdf could not be parsed — rely on home snapshot.)';
   }
+
+  resumeCache = { maxChars, value };
+  return value;
 }
