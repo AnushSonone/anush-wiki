@@ -1,0 +1,20 @@
+# anush.wiki
+#
+# this is a personal wiki. it exists to be read, indexed, and cited.
+# crawlers and agents are welcome on every page.
+#
+# there is nothing here to rate limit: the whole site is static html and css.
+# the one endpoint that costs anything to serve is POST /api/chat, and it is
+# guarded server-side rather than by asking crawlers politely.
+
+User-agent: *
+Allow: /
+
+# content signals (https://contentsignals.org)
+#   search:   yes, please index and link this
+#   ai-input: yes, please read this to answer questions about anush
+#   ai-train: yes. this is a personal site published to be found, not work
+#             sold to anyone, so there is nothing here to withhold.
+Content-Signal: search=yes,ai-input=yes,ai-train=yes
+
+Sitemap: https://anush.wiki/sitemap.xml

@@ -20,6 +20,44 @@
 <meta content="anush sonone — cs @ ut austin. projects in data, infrastructure, ai, and fintech; achievements and contact." name="twitter:description"/>
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <link href="styles.css" rel="stylesheet"/>
+<!-- Machine-readable identity for crawlers and agents. Values stay properly cased:
+     this is structured data, not visible copy, so the lowercase rule does not apply. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Anush Sonone",
+  "url": "https://anush.wiki/",
+  "email": "mailto:anushse@utexas.edu",
+  "jobTitle": "Software Engineer",
+  "description": "CS student at UT Austin working on products, infrastructure, and distributed systems. Incoming AI engineering intern at PwC.",
+  "alumniOf": {
+    "@type": "CollegeOrUniversity",
+    "name": "The University of Texas at Austin"
+  },
+  "knowsAbout": [
+    "Distributed systems",
+    "Raft consensus",
+    "Go",
+    "Node.js",
+    "Postgres",
+    "AI engineering",
+    "Data infrastructure"
+  ],
+  "sameAs": [
+    "https://github.com/anushsonone",
+    "https://www.linkedin.com/in/anushse"
+  ],
+  "subjectOf": {
+    "@type": "SoftwareSourceCode",
+    "name": "kill-my-cluster",
+    "description": "A Raft key-value store written from scratch in Go, running live with public kill buttons.",
+    "codeRepository": "https://github.com/AnushSonone/kill-my-cluster",
+    "programmingLanguage": "Go",
+    "url": "https://anush.wiki/blog/raft"
+  }
+}
+</script>
 </head>
 <body>
 <a class="skip-link" href="#main">skip to content</a>
@@ -103,10 +141,11 @@
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/kill-my-cluster" rel="noopener noreferrer" target="_blank">killmycluster: a self-healing raft-based kv</a>
-              - built a public raft kv demo with crash-safe wal &amp; grpc replication,
-              recovering from leader failure within 10s; and sustained 1.5k+ replicated
-              writes/s &amp; 10k+ reads/s under load with zero commit-index drift across
-              the cluster.</span>
+              - wrote a raft key-value store from scratch in go with a crash-safe wal
+              &amp; grpc replication, self-healing from leader loss in ~10s; cut read cost
+              by moving gets off the raft log onto readindex leases; and sustained ~1.2k
+              replicated writes/s &amp; ~1.5k reads/s on a 4-ocpu box while visitors kill
+              machines on purpose at <a href="/blog/raft">anush.wiki/blog/raft</a>.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://devpost.com/software/a-wnbv1p" rel="noopener noreferrer" target="_blank">lapsynk: formula 1 ai copilot</a>
