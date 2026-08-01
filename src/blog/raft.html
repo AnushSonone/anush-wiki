@@ -148,17 +148,178 @@ kill a follower and not much happens.
 kill the leader and there is a short pause while the rest elect a replacement.
 </p>
 
+<h2>how the nodes talk</h2>
+
+<p>
+there are only three messages in the whole protocol, and the one below does almost all the work.
+here is a single write making the round trip.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 520" role="img" aria-labelledby="talk-title talk-desc">
+<title id="talk-title">one write, start to finish</title>
+<desc id="talk-desc">a write arrives at the leader, which appends it to its own log and flushes it to disk. the leader then sends an appendentries message to the other six containing the new entries, its term, and how far it has committed. each follower checks that the entry before this one matches what it already holds, and if so appends and flushes to disk before replying yes. once four of the seven hold the entry the leader marks it committed, and the next appendentries carries that new commit point so the followers apply it too. a heartbeat is the same message carrying no entries.</desc>
+
+<defs>
+<marker id="raft-talk-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path class="raft-arch__arrow" d="M 0 0 L 10 5 L 0 10 z"></path>
+</marker>
+</defs>
+
+<rect class="raft-arch__box" x="40" y="8" width="220" height="44"></rect>
+<text class="raft-arch__title" x="150" y="35" text-anchor="middle">the leader</text>
+
+<rect class="raft-arch__box" x="450" y="8" width="240" height="44"></rect>
+<text class="raft-arch__title" x="570" y="35" text-anchor="middle">the other six</text>
+
+<line class="raft-arch__zone" x1="150" y1="52" x2="150" y2="72"></line>
+<line class="raft-arch__zone" x1="150" y1="120" x2="150" y2="282"></line>
+<line class="raft-arch__zone" x1="150" y1="330" x2="150" y2="452"></line>
+<line class="raft-arch__zone" x1="570" y1="52" x2="570" y2="170"></line>
+<line class="raft-arch__zone" x1="570" y1="232" x2="570" y2="380"></line>
+<line class="raft-arch__zone" x1="570" y1="428" x2="570" y2="452"></line>
+
+<rect class="raft-arch__box" x="40" y="72" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="92" text-anchor="middle">1. write it down first</text>
+<text class="raft-arch__sub" x="150" y="108" text-anchor="middle">append to log, fsync to disk</text>
+
+<line class="raft-arch__edge" x1="262" y1="150" x2="448" y2="150" marker-end="url(#raft-talk-arrow)"></line>
+<text class="raft-arch__edge-label" x="355" y="144" text-anchor="middle">2. AppendEntries: the new entries, my term, my commit point</text>
+
+<rect class="raft-arch__box" x="450" y="170" width="240" height="62"></rect>
+<text class="raft-arch__sub" x="570" y="190" text-anchor="middle">3. every follower checks</text>
+<text class="raft-arch__sub" x="570" y="206" text-anchor="middle">does the entry before it match?</text>
+<text class="raft-arch__sub" x="570" y="222" text-anchor="middle">then append and fsync</text>
+
+<line class="raft-arch__edge" x1="448" y1="262" x2="262" y2="262" marker-end="url(#raft-talk-arrow)"></line>
+<text class="raft-arch__edge-label" x="355" y="256" text-anchor="middle">4. yes, it is on my disk</text>
+
+<rect class="raft-arch__box" x="40" y="282" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="302" text-anchor="middle">5. that is 4 of the 7</text>
+<text class="raft-arch__sub" x="150" y="318" text-anchor="middle">so the write is committed</text>
+
+<line class="raft-arch__edge" x1="262" y1="360" x2="448" y2="360" marker-end="url(#raft-talk-arrow)"></line>
+<text class="raft-arch__edge-label" x="355" y="354" text-anchor="middle">6. the next AppendEntries carries the new commit point</text>
+
+<rect class="raft-arch__box" x="450" y="380" width="240" height="48"></rect>
+<text class="raft-arch__sub" x="570" y="400" text-anchor="middle">7. apply it to the map,</text>
+<text class="raft-arch__sub" x="570" y="416" text-anchor="middle">where reads can finally see it</text>
+
+<text class="raft-arch__sub" x="360" y="482" text-anchor="middle">a heartbeat is this same message with no entries in it.</text>
+<text class="raft-arch__sub" x="360" y="500" text-anchor="middle">that is all a leader does to say i am still here: about seven of them a second.</text>
+</svg>
+</div>
+
+<p>
+the other two messages are <strong>requestvote</strong>, which is the next diagram, and <strong>installsnapshot</strong>.
+that last one is for a follower that has been gone long enough that the entries it needs were already compacted away, so the leader gives up on catching it up entry by entry and ships the whole map instead.
+that is what happens to every machine you kill here, because ten seconds away at this write rate is further behind than the leader bothers to remember.
+</p>
+
+<h2>what an election looks like</h2>
+
+<p>
+this is the part i got wrong first, and the part i am most pleased with now.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 560" role="img" aria-labelledby="vote-title vote-desc">
+<title id="vote-title">how the cluster replaces a dead leader</title>
+<desc id="vote-desc">while the leader is alive it sends an empty appendentries roughly every 150 milliseconds, and each one resets every follower's election timer. when you kill the leader those heartbeats stop. each follower is waiting a different random amount of time between 750 and 1500 milliseconds, so one of them times out first rather than all of them at once. that node does not immediately start an election: it first runs a pre-vote poll asking whether the others would vote for it, without anyone changing their term. only if it wins that poll does it increment the term and hold the real vote, and once four of the seven vote yes it becomes leader and starts heartbeating again. measured on the live cluster, that takes between 2.6 and 2.9 seconds from the moment you click.</desc>
+
+<circle class="raft-arch__dot raft-arch__dot--leader" cx="40" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="64" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="112" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="160" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="184" cy="90" r="8"></circle>
+<text class="raft-arch__title" x="220" y="82">everything is fine</text>
+<text class="raft-arch__sub" x="220" y="104">the leader sends an empty AppendEntries about every 150ms. every one of them</text>
+<text class="raft-arch__sub" x="220" y="120">resets the other six timers, which is the only reason nobody calls an election.</text>
+
+<line class="raft-arch__zone" x1="40" y1="146" x2="690" y2="146"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="190" r="8"></circle>
+<path class="raft-arch__x" d="M 34 184 L 46 196 M 34 196 L 46 184"></path>
+<circle class="raft-arch__dot" cx="64" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="112" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="160" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="184" cy="190" r="8"></circle>
+<text class="raft-arch__title" x="220" y="182">you kill the leader</text>
+<text class="raft-arch__sub" x="220" y="204">the heartbeats stop. nothing dramatic happens yet, because none of the six</text>
+<text class="raft-arch__sub" x="220" y="220">knows the difference between a dead leader and a slow one.</text>
+
+<line class="raft-arch__zone" x1="40" y1="246" x2="690" y2="246"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="290" r="8"></circle>
+<path class="raft-arch__x" d="M 34 284 L 46 296 M 34 296 L 46 284"></path>
+<circle class="raft-arch__dot" cx="64" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="290" r="8"></circle>
+<circle class="raft-arch__ring" cx="112" cy="290" r="13"></circle>
+<circle class="raft-arch__dot" cx="112" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="160" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="184" cy="290" r="8"></circle>
+<text class="raft-arch__title" x="220" y="282">one timer runs out first</text>
+<text class="raft-arch__sub" x="220" y="304">each node waits a different random 750 to 1500ms, so they almost never wake</text>
+<text class="raft-arch__sub" x="220" y="320">together. spreading them out is what stops six candidates splitting the vote.</text>
+
+<line class="raft-arch__zone" x1="40" y1="346" x2="690" y2="346"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="390" r="8"></circle>
+<path class="raft-arch__x" d="M 34 384 L 46 396 M 34 396 L 46 384"></path>
+<circle class="raft-arch__dot" cx="64" cy="390" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="390" r="8"></circle>
+<line class="raft-arch__ring" x1="64" y1="366" x2="184" y2="366"></line>
+<line class="raft-arch__ring" x1="112" y1="366" x2="112" y2="376"></line>
+<circle class="raft-arch__ring" cx="112" cy="390" r="13"></circle>
+<circle class="raft-arch__dot" cx="112" cy="390" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="390" r="8"></circle>
+<circle class="raft-arch__dot" cx="160" cy="390" r="8"></circle>
+<circle class="raft-arch__dot" cx="184" cy="390" r="8"></circle>
+<text class="raft-arch__title" x="220" y="382">it asks before it campaigns</text>
+<text class="raft-arch__sub" x="220" y="404">pre-vote: would you vote for me, if i asked? nobody changes their term to answer.</text>
+<text class="raft-arch__sub" x="220" y="420">a node that cannot win now disturbs nobody. this is the fix for the storm below.</text>
+
+<line class="raft-arch__zone" x1="40" y1="446" x2="690" y2="446"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="490" r="8"></circle>
+<path class="raft-arch__x" d="M 34 484 L 46 496 M 34 496 L 46 484"></path>
+<circle class="raft-arch__dot" cx="64" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="490" r="8"></circle>
+<circle class="raft-arch__dot raft-arch__dot--leader" cx="112" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="160" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="184" cy="490" r="8"></circle>
+<text class="raft-arch__title" x="220" y="482">it wins, and the term goes up by one</text>
+<text class="raft-arch__sub" x="220" y="504">only now does it raise the term and ask for real. four yes votes and it is the</text>
+<text class="raft-arch__sub" x="220" y="520">leader, heartbeating. measured 2.6 to 2.9 seconds from click to new leader.</text>
+</svg>
+</div>
+
+<p>
+the pre-vote step in the middle is not in the original paper, it is from the author's thesis, and skipping it cost me six days.
+a node that is cut off keeps timing out, and under the naive rule every timeout raises its term.
+when it comes back it shows up holding a term nobody else has seen, the real leader stands down out of politeness, and the cluster elects again.
+mine reached term 36,000 doing that on a loop, burning 87% of the cpu to commit nothing at all.
+asking first costs one round trip and makes the whole failure mode impossible.
+</p>
+
 <h2>how the pieces fit together</h2>
 
 <p>
 the cluster itself is only part of it.
-here is everything sitting behind the panel above, and how a kill you press actually reaches a machine.
+the top half is everything sitting behind the panel above, and how a kill you press actually reaches a machine.
+the bottom half is what that kill does once it lands, which is where raft stops being plumbing and starts being the whole point.
 </p>
 
 <div class="raft-arch-wrap">
-<svg class="raft-arch" viewBox="0 0 720 476" role="img" aria-labelledby="arch-title arch-desc">
+<svg class="raft-arch" viewBox="0 0 720 680" role="img" aria-labelledby="arch-title arch-desc">
 <title id="arch-title">how the pieces fit together</title>
-<desc id="arch-desc">your browser reaches a cloudflare tunnel over https, and that tunnel is the only way in. behind it, on one oracle vm, a control plane serves the kill buttons and the live updates while grafana serves the charts. both read from a prometheus that is never exposed publicly. the control plane kills and heals seven raft nodes, prometheus scrapes those nodes for metrics, and a load generator keeps steady writes and reads flowing to them.</desc>
+<desc id="arch-desc">your browser reaches a cloudflare tunnel over https, and that tunnel is the only way in. behind it, on one oracle vm, a control plane serves the kill buttons and the live updates while grafana serves the charts. both read from a prometheus that is never exposed publicly. the control plane kills and heals seven raft nodes, prometheus scrapes those nodes for metrics, and a load generator keeps steady writes and reads flowing to them. the lower half shows what a kill does inside those seven nodes. a write is only committed once four of the seven hold it on disk, so killing one follower leaves six alive and writes never pause; killing the leader costs a short election before writes resume; and killing four leaves only three alive, which is not a majority, so writes are refused until the machines heal.</desc>
 
 <defs>
 <marker id="raft-arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -225,11 +386,63 @@ here is everything sitting behind the panel above, and how a kill you press actu
 <circle class="raft-arch__dot" cx="440" cy="434" r="9"></circle>
 <circle class="raft-arch__dot" cx="480" cy="434" r="9"></circle>
 <text class="raft-arch__sub" x="360" y="458" text-anchor="middle">one leader, six followers, replicating over grpc</text>
+
+<line class="raft-arch__zone" x1="0" y1="500" x2="720" y2="500"></line>
+<text class="raft-arch__sub" x="2" y="492">and here is what your kill does inside those seven</text>
+
+<text class="raft-arch__sub" x="360" y="524" text-anchor="middle">the rule underneath all three: a write counts only once 4 of the 7 hold it on disk</text>
+
+<rect class="raft-arch__box" x="30" y="540" width="200" height="120"></rect>
+<text class="raft-arch__title" x="130" y="564" text-anchor="middle">you kill a follower</text>
+<circle class="raft-arch__dot raft-arch__dot--leader" cx="58" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="82" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="106" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="130" cy="594" r="8"></circle>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="154" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 148 588 L 160 600 M 148 600 L 160 588"></path>
+<circle class="raft-arch__dot" cx="178" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="202" cy="594" r="8"></circle>
+<text class="raft-arch__sub" x="130" y="620" text-anchor="middle">6 of 7 still alive.</text>
+<text class="raft-arch__sub" x="130" y="636" text-anchor="middle">that is still a majority,</text>
+<text class="raft-arch__sub" x="130" y="652" text-anchor="middle">so writes never pause.</text>
+
+<rect class="raft-arch__box" x="260" y="540" width="200" height="120"></rect>
+<text class="raft-arch__title" x="360" y="564" text-anchor="middle">you kill the leader</text>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="288" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 282 588 L 294 600 M 282 600 L 294 588"></path>
+<circle class="raft-arch__dot" cx="312" cy="594" r="8"></circle>
+<circle class="raft-arch__dot raft-arch__dot--leader" cx="336" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="360" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="384" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="408" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="432" cy="594" r="8"></circle>
+<text class="raft-arch__sub" x="360" y="620" text-anchor="middle">the six left vote in a new</text>
+<text class="raft-arch__sub" x="360" y="636" text-anchor="middle">leader, the filled dot moves,</text>
+<text class="raft-arch__sub" x="360" y="652" text-anchor="middle">then writes resume.</text>
+
+<rect class="raft-arch__box" x="490" y="540" width="200" height="120"></rect>
+<text class="raft-arch__title" x="590" y="564" text-anchor="middle">you kill four</text>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="518" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 512 588 L 524 600 M 512 600 L 524 588"></path>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="542" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 536 588 L 548 600 M 536 600 L 548 588"></path>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="566" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 560 588 L 572 600 M 560 600 L 572 588"></path>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="590" cy="594" r="8"></circle>
+<path class="raft-arch__x" d="M 584 588 L 596 600 M 584 600 L 596 588"></path>
+<circle class="raft-arch__dot" cx="614" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="638" cy="594" r="8"></circle>
+<circle class="raft-arch__dot" cx="662" cy="594" r="8"></circle>
+<text class="raft-arch__sub" x="590" y="620" text-anchor="middle">only 3 left, and no dot is</text>
+<text class="raft-arch__sub" x="590" y="636" text-anchor="middle">filled. no majority means no</text>
+<text class="raft-arch__sub" x="590" y="652" text-anchor="middle">leader, so writes are refused.</text>
 </svg>
 </div>
 
 <p>
-the filled dot is the leader.
+the filled dot is the leader, and the crossed ones are machines you killed.
+the third case is the interesting one: raft would rather refuse your write than take it on three machines and lose it, so a cluster with no majority stops instead of guessing.
+the machines come back on their own about ten seconds later and the filled dot reappears.
 node_exporter runs alongside prometheus and reports the host cpu and memory you see in the readout, and everything except the tunnel is a docker container on the same box.
 there is no separate demo hostname, so this page only ever sees what the control plane chooses to share.
 </p>

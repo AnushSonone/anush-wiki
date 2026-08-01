@@ -454,6 +454,27 @@
   fill: var(--ra-ink);
 }
 
+/* A machine you killed: same circle, drawn back to hairline so the surviving
+   ones read as the foreground, with a cross struck through it. */
+.raft-arch__dot--dead {
+  stroke: var(--ra-line);
+}
+
+.raft-arch__x {
+  fill: none;
+  stroke: var(--ra-muted);
+  stroke-width: 1.25;
+}
+
+/* A node standing for election: the dot is unchanged, the dashed halo says
+   "campaigning" without inventing a third fill the reader has to learn. */
+.raft-arch__ring {
+  fill: none;
+  stroke: var(--ra-ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
 .raft-arch__title {
   fill: var(--ra-ink);
   font-size: 15px;
