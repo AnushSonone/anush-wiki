@@ -7,7 +7,7 @@ Wiki assistant (**optional**, first-party embed + API): architecture, quotas, co
 ## Open (highest priority first)
 
 - [ ] **Dashboard steps for the assistant (manual, not code):** (1) provider spend cap in Google AI Studio — now the real cost ceiling; (2) Cloudflare rate limiting rule on `POST /api/chat`, per IP, **20 requests per 1-minute window** (free plan allows exactly one rule, 10s/1m periods only, IP-only — no daily window available, which is why the per-day cap lives in the cookie); (3) Vercel Deployment Protection → **Standard Protection** so generated `*.vercel.app` URLs stop being publicly reachable while `anush.wiki` stays open. The assistant's limits are only as good as these three.
-- [ ] **Assistant — Phase A prod smoke (rewritten):** the old KV smoke no longer applies. Confirm on production: `GET /api/chat` mints a cookie, POST returns 200 and a `Set-Cookie` with count + 1, a tampered cookie gives 403, and a cookie at count 50 gives 429 with no model call.
+- [ ] **Assistant — Phase A prod smoke (rewritten):** the old KV smoke no longer applies. Confirm on production: `GET /api/chat` mints a cookie, POST returns 200 and a `Set-Cookie` with count + 1, a tampered cookie gives 403, and a cookie at count 15 gives 429 with no model call.
 
 - [ ] **Raft page rewrite (humble-builder voice):** Restructure `src/blog/raft.html` for a reader who does not already know Raft — hook, live lab, then what it is / the problem it mocks / the solution / a step-by-step build story including the two outages / what it measures today / open gaps / resources at the bottom. Voice follows `lib/assistant-system-prompt.txt` (plain verbs, numbers first, no hype, lowercase) and the no-bold rule; prose carries the explanation and lists are reserved for checklists, reference collections, and step-by-step guidance. Includes a new inline `raft-arch` system diagram (SVG, own `--ra-*` tokens, scrolls inside `.raft-arch-wrap` on narrow screens) built clean rather than reviving the 2026-07-21 version that was rejected for overlapping edges. `.raft-lab__obs-note` lost its `max-width: 40rem` so the grafana note spans the full lab width. Throughput copy corrected to the measured ~1,160 w/s + ~1,500 r/s under CPU caps; the 2026-07-21 ladder stays as dated history. Branch `raft-page-humble-rewrite`, localhost review only, no commit or push until Anush asks.
 - [ ] **Proofread:** Confirm internship dates, GitHub username, résumé PDF URL.
@@ -19,7 +19,7 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 
 #### Phase A verification / optional hardening
 
-- [ ] **Assistant — Phase A prod smoke:** With KV linked on Vercel (or staging), confirm **51st** assistant completion in one UTC day returns **429** and provider is not called; confirm **403** path without primed cookie after blocking cookies; optional **parallel** burst near limit does not overshoot.
+- [ ] **Assistant — Phase A prod smoke:** Confirm the **16th** assistant completion in one UTC day returns **429** and provider is not called; confirm **403** path without primed cookie after blocking cookies; optional **parallel** burst near limit does not overshoot.
 - [ ] **Assistant — Phase A automated tests:** Integration or script covering quota boundary + concurrency (spec checklist).
 
 #### Phase B — after Phase A is done
@@ -33,6 +33,7 @@ Implementation order is **normative** in [specs/feature-assistant-chat.md](specs
 
 ## Done
 
+- [x] **Assistant — conversational routing + token cut (2026-08-26):** the assistant was reciting biography on "hey" and dumping numbers-first résumé bullets on any noun it recognised, because the prompt ordered number-first packing and every request carried the whole wiki + résumé (~22k chars, ~5.5k prompt tokens). Now `lib/published-context.ts` chunks the résumé per entry plus blog excerpts once per process, `lib/knowledge-router.ts` picks chunks by keyword from the last 3 user turns (3,000-char budget, no notes on small talk), and `lib/assistant-system-prompt.txt` is a short persona that answers only from attached notes. Still one model call per turn. History 18 → 8 turns at 600 chars, output cap 2048 → 256, per-visitor cap **50 → 15**/UTC day (free plan is bounded by requests per day). Route logs `prompt=`/`output=` token counts per turn. Spec amended (Knowledge boundary, quota).
 - [x] **Lowercase copy policy:** All visible HTML text lowercased; `AGENTS.md` documents rules + `scripts/lowercase_html_text.py` helper; `viewBox` preserved on SVG.
 - [x] **Blog images:** **`src/about/`** assets; post **`img`** uses **`/about/...`**; legacy **`/public/about/*`** **`308`** → **`/about/*`**.
 - [x] **Blog clean URLs:** canonical **`/blog/<slug>`**; **`next.config.ts`** redirects legacy **`/<slug>.html`**, **`/blog/<slug>.html`**, **`/<slug>`**, **`/writing/<slug>`**; internal links use clean paths; slugs in **`lib/blog-post-slugs.ts`**.

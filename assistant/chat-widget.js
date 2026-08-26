@@ -317,7 +317,7 @@
     scrollLogToEnd();
 
     try {
-      const res = await postChatWithRetry({ messages: msgs });
+      const res = await postChatWithRetry({ messages: msgs.slice(-8) });
       const raw = await res.text().catch(() => '');
       /** @type {Record<string, unknown>} */
       let data = {};

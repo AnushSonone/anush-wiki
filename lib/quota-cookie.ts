@@ -4,7 +4,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 export const QUOTA_COOKIE_NAME = 'wiki_quota_vid';
 
 /** Successful assistant completions allowed per visitor per UTC day. */
-export const QUOTA_DAILY_CAP = 50;
+export const QUOTA_DAILY_CAP = 15;
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

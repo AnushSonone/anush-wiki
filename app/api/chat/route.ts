@@ -14,16 +14,21 @@ import {
   utcCalendarDate,
   verifyQuotaCookieValue,
 } from '../../../lib/quota-cookie';
-import { loadResumePdfPlain, loadWikiPlainSnapshot } from '../../../lib/published-context';
+import { loadKnowledgeBase } from '../../../lib/published-context';
+import { selectChunks } from '../../../lib/knowledge-router';
 
 export const runtime = 'nodejs';
 
 /**
- * Visible reply budget. Gemini 2.5 counts *thinking* tokens against this cap too —
- * keep headroom high and set thinkingBudget: 0 below so short wiki answers are not
- * truncated mid-clause (finishReason MAX_TOKENS).
+ * Visible reply budget. Replies are one or two short sentences (well under 100
+ * tokens); thinkingBudget: 0 below keeps Gemini 2.5 from spending this cap on
+ * thinking, so 256 is headroom rather than a ceiling that truncates answers.
  */
-const ASSISTANT_MAX_OUTPUT_TOKENS = 2048;
+const ASSISTANT_MAX_OUTPUT_TOKENS = 256;
+
+/** Visitor turns kept for the model; the router reads the last few user turns of these. */
+const HISTORY_TURNS = 8;
+const HISTORY_TURN_CHARS = 600;
 
 /** Dev-only escape hatch so localhost does not need a signed cookie. */
 function isQuotaBypassDev(): boolean {
@@ -134,6 +139,13 @@ async function geminiViaGoogleSdk(
       if (!text) {
         throw new Error('empty_model_text');
       }
+      /** Per-turn cost in the logs; free-tier budgeting. No visitor text here. */
+      const usage = result.response.usageMetadata;
+      console.info(
+        '[api/chat] tokens',
+        `prompt=${usage?.promptTokenCount ?? '?'}`,
+        `output=${usage?.candidatesTokenCount ?? '?'}`,
+      );
       return text;
     } catch (e) {
       lastErr = e;
@@ -155,30 +167,29 @@ async function loadTextFile(limit: number, ...segments: string[]) {
   }
 }
 
+/** Persona prompt, read once per process. All behaviour rules live in that file. */
+let personaPromise: Promise<string> | undefined;
+
+function loadPersona(): Promise<string> {
+  personaPromise ??= loadTextFile(4000, 'lib', 'assistant-system-prompt.txt').then(
+    (text) => text || 'you help visitors understand this wiki. prefer accurate, humble answers.',
+  );
+  return personaPromise;
+}
+
 /**
- * System prompt + grounding, built once per process. The underlying loaders cache
- * too; this also avoids rejoining ~22k characters on every message. A redeploy is a
- * new process, so published content changes still land.
+ * System prompt for one turn: persona + the one-line topic index + only the notes
+ * the router picked from the visitor's recent messages. Small talk gets no notes,
+ * so there is nothing to recite; a fact question gets one or two small chunks.
  */
-let systemContextPromise: Promise<string> | undefined;
-
-function buildSystemContext(): Promise<string> {
-  systemContextPromise ??= (async () => {
-    const baseSystem = await loadTextFile(8000, 'lib', 'assistant-system-prompt.txt');
-    const wikiSnapshot = await loadWikiPlainSnapshot(14_000);
-    const resumePdfPlain = await loadResumePdfPlain(8_000);
-
-    return [
-      baseSystem || 'you help visitors understand this wiki. prefer accurate, humble answers.',
-      'output contract (every assistant turn): if wiki/pdf text includes any grounded count, date range, rank, dollar, percent, duration, scale, client size, or similar figure that fits the visitor\'s answer, sentence one opens with those numerals (not tucked after narrative lead-ins). otherwise open with concrete name/date fact. stay within two finished sentences, each ending cleanly; prefer one sentence for vibes-only prompts; never trail mid-clause or start sentence three.',
-      'live wiki (plain text from src/**/*.html on disk — redeploy picks up git changes):\n' + wikiSnapshot,
-      'résumé pdf extract (plain text):\n' + resumePdfPlain,
-    ]
-      .filter(Boolean)
-      .join('\n\n');
-  })();
-
-  return systemContextPromise;
+async function buildSystemContext(userTurns: string[]): Promise<string> {
+  const [persona, kb] = await Promise.all([loadPersona(), loadKnowledgeBase()]);
+  const chunks = selectChunks(userTurns, kb);
+  const notes = chunks.length
+    ? 'notes pulled for this turn (answer only from these):\n'
+      + chunks.map((c) => `[${c.title}]\n${c.text}`).join('\n\n')
+    : 'no notes pulled this turn. if they ask about anush, offer a topic from the index or ask which one.';
+  return [persona, kb.index, notes].join('\n\n');
 }
 
 /** Prime the HttpOnly quota cookie before POST. */
@@ -302,7 +313,7 @@ export async function POST(req: Request) {
           {
             error: 'quota_exhausted',
             reply:
-              'you have reached the daily limit for this assistant (50 replies per utc day). try again after midnight utc.',
+              `you have reached the daily limit for this assistant (${QUOTA_DAILY_CAP} replies per utc day). try again after midnight utc.`,
           },
           { status: 429 },
         );
@@ -312,12 +323,14 @@ export async function POST(req: Request) {
       quotaCommit = { visitorId: verified.visitorId, day: today, next: used + 1, secret };
     }
 
-    const systemWithContext = await buildSystemContext();
-
-    const safeTurns = parsed.messages.slice(-18).map((m) => ({
+    const safeTurns = parsed.messages.slice(-HISTORY_TURNS).map((m) => ({
       role: m.role as 'user' | 'assistant',
-      content: clip(m.content, 8000),
+      content: clip(m.content, HISTORY_TURN_CHARS),
     }));
+
+    const systemWithContext = await buildSystemContext(
+      safeTurns.filter((m) => m.role === 'user').map((m) => m.content),
+    );
 
     let textOut: string;
     try {
