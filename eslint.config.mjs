@@ -10,6 +10,8 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Built demo bundles under src/blog/*-demo are generated output, not source.
+  { ignores: ['src/blog/*-demo/**'] },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
 ];
 

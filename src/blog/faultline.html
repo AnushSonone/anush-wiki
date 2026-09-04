@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="https://anush.wiki/blog/faultline" rel="canonical"/>
+<title>who broke checkout? - anush sonone</title>
+<meta content="an incident replay engine i wrote from scratch in rust: five services breaking on one clock, running live, and you can rewind them and guess who did it." name="description"/>
+<meta content="anush sonone" name="author"/>
+<meta content="article" property="og:type"/>
+<meta content="who broke checkout? - anush sonone" property="og:title"/>
+<meta content="an incident replay engine i wrote from scratch in rust: five services breaking on one clock, running live, and you can rewind them and guess who did it." property="og:description"/>
+<meta content="https://anush.wiki/blog/faultline" property="og:url"/>
+<meta content="anush.wiki" property="og:site_name"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="who broke checkout? - anush sonone" name="twitter:title"/>
+<meta content="an incident replay engine i wrote from scratch in rust: five services breaking on one clock, running live, and you can rewind them and guess who did it." name="twitter:description"/>
+<meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
+<meta content="2026-08-01" property="article:published_time"/>
+<link href="../styles.css" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=humble-2026-07-30" rel="stylesheet"/>
+</head>
+<body class="page-blog">
+<a class="skip-link" href="#main">skip to content</a>
+<main class="site-main site-main--blog" id="main">
+<div class="site-top">
+<div class="site-header-row">
+<div class="site-name"><a href="/"><span class="site-name__fish" aria-hidden="true">𓆝 𓆟 𓆞</span><span class="site-name__text">anush sonone</span><span class="site-name__fish" aria-hidden="true">𓆞 𓆟 𓆝</span></a></div>
+<nav aria-label="primary">
+<ul class="site-nav">
+<li><a href="/">home</a></li>
+<li><a href="/blog/">blog</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<article class="blog-article" id="article">
+<h1>who broke checkout?</h1>
+<p class="article-meta">
+<time datetime="2026-08-01">aug 1, 2026</time> · updated <time datetime="2026-09-04">sep 4, 2026</time> · by anush sonone
+</p>
+
+<p>
+try to find which service broke! :)
+</p>
+
+<!-- PROD: set data-api-base to https://faultline.anush.wiki at deploy time -->
+<link href="/blog/faultline-demo/faultline-demo.css?v=embed-2026-09-04" rel="stylesheet"/>
+<section id="faultline-demo-root" class="faultline-demo" aria-label="faultline live demo" data-api-base="http://127.0.0.1:8080">
+<noscript><p>the live demo needs javascript.</p></noscript>
+</section>
+
+<h2>what this is</h2>
+
+<p>
+faultline is an incident replay engine i wrote from scratch in rust.
+there's no stream-processing library under it, so the event-time clock, the watermarks, the windows, the percentile sketches, the temporal join, the checkpoints, and the root-cause ranking are all mine.
+the ui is react, and the whole thing runs on one small vm behind a cloudflare tunnel, with this page talking to it directly.
+</p>
+
+<h2>the problem it mocks</h2>
+
+<p>
+a modern web app isn't one program.
+it's dozens of small services calling each other: the storefront calls checkout, checkout calls recommendations, recommendations call the catalog.
+when one of them goes wrong the symptoms show up everywhere at once, because everything depends on everything, and errors spike three services away from the one that actually broke.
+</p>
+
+<p>
+working backwards from those symptoms to the service that started it is called root cause analysis, and in real life it's a human at 3am staring at dashboards and guessing.
+the dashboards don't help as much as they should, because they show you now, and what you need is the order things happened in.
+the tools that do show you the order sell it as a black box, and lately the box has an llm in it.
+faultline does the working-backwards part in the open: you can rewind, you can see every piece of evidence, and you can see exactly how it got a case wrong.
+</p>
+
+<p>
+here's the shop the real cases come from, google's online boutique demo, drawn as who calls whom, with one ordinary failure in it.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 500" role="img" aria-labelledby="shop-title shop-desc">
+<title id="shop-title">one shop, one leak, and where the pager points</title>
+<desc id="shop-desc">the twelve services of the online boutique that the real cases come from, drawn as a call graph. the frontend calls seven services, checkout calls six, recommendation calls the product catalog, and the cart keeps its data in redis. a memory leak in the product catalog is drawn as the filled box. three services call it directly, recommendation, checkout, and the frontend, so all three slow down and are drawn crossed, and the pager fires for the frontend, two hops from the cause. the eight services that never touch the catalog stay healthy.</desc>
+<defs><marker id="shop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="raft-arch__arrow" d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs>
+<line class="raft-arch__edge" x1="360" y1="56" x2="360" y2="98" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="60" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="180" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="360" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="500" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="620" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="120" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="136" x2="300" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="120" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="300" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="440" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="560" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="500" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="360" y1="236" x2="620" y2="198" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="180" y1="236" x2="300" y2="298" marker-end="url(#shop-arrow)"></line>
+<line class="raft-arch__edge" x1="120" y1="336" x2="120" y2="398" marker-end="url(#shop-arrow)"></line>
+<rect class="raft-arch__box" x="308.0" y="20" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="360" y="43" text-anchor="middle">frontend-external</text>
+<path class="raft-arch__x" d="M 306.0 18 L 318.0 30 M 306.0 30 L 318.0 18"></path>
+<rect class="raft-arch__box" x="308.0" y="100" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="360" y="123" text-anchor="middle">frontend</text>
+<path class="raft-arch__x" d="M 306.0 98 L 318.0 110 M 306.0 110 L 318.0 98"></path>
+<rect class="raft-arch__box" x="8.0" y="200" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="60" y="223" text-anchor="middle">ad</text>
+<rect class="raft-arch__box" x="128.0" y="200" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="180" y="223" text-anchor="middle">recommendation</text>
+<path class="raft-arch__x" d="M 126.0 198 L 138.0 210 M 126.0 210 L 138.0 198"></path>
+<rect class="raft-arch__box" x="308.0" y="200" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="360" y="223" text-anchor="middle">checkout</text>
+<path class="raft-arch__x" d="M 306.0 198 L 318.0 210 M 306.0 210 L 318.0 198"></path>
+<rect class="raft-arch__box" x="448.0" y="200" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="500" y="223" text-anchor="middle">currency</text>
+<rect class="raft-arch__box" x="568.0" y="200" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="620" y="223" text-anchor="middle">shipping</text>
+<rect class="raft-arch__box" x="68.0" y="300" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="120" y="323" text-anchor="middle">cart</text>
+<rect class="raft-arch__box" x="248.0" y="300" width="104" height="36" style="fill:#000"></rect>
+<text class="raft-arch__sub" x="300" y="323" text-anchor="middle" style="fill:#fff">productcatalog</text>
+<rect class="raft-arch__box" x="388.0" y="300" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="440" y="323" text-anchor="middle">email</text>
+<rect class="raft-arch__box" x="508.0" y="300" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="560" y="323" text-anchor="middle">payment</text>
+<rect class="raft-arch__box" x="68.0" y="400" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="120" y="423" text-anchor="middle">redis</text>
+<text class="raft-arch__sub" x="560" y="40" text-anchor="start">the pager says: frontend is slow</text>
+<line class="raft-arch__edge" x1="556" y1="44" x2="414" y2="112" marker-end="url(#shop-arrow)"></line>
+<text class="raft-arch__sub" x="560" y="60" text-anchor="start">which is true, and two hops</text>
+<text class="raft-arch__sub" x="560" y="76" text-anchor="start">from what actually broke</text>
+<text class="raft-arch__sub" x="360" y="462" text-anchor="middle">filled: where the memory leak is. crossed: every service that calls it, and therefore slows down.</text>
+<text class="raft-arch__sub" x="360" y="480" text-anchor="middle">the eight others are fine, and a dashboard sorted by error rate will still list all twelve.</text>
+</svg>
+</div>
+
+<p>
+the leak is in one box, the symptoms are in four, and the alert names the one furthest from the cause, because the frontend is the only service a customer can see.
+the eight healthy ones still show up on every dashboard, and at 3am they all look about the same.
+</p>
+
+<h2>how it works</h2>
+
+<p>
+every metric sample, log line, trace span, and deployment carries the time it happened, not the time it arrived.
+faultline sorts the entire incident onto that one clock and replays it, which is what lets you scrub backwards.
+</p>
+
+<p>
+as the clock moves, each service gets a rolling baseline of its own normal, a median and a spread, and anything that strays far enough from it is flagged.
+at the end, nine kinds of evidence go into a fixed weighted sum for every service: how far it strayed, whether it went wrong before the services that call it, whether failed requests route through it, whether a deploy landed just before, and so on.
+that fixed sum is the whole trick, because same input means same score to the byte, and every score comes apart into the nine numbers that made it, so you can argue with any of them.
+</p>
+
+<p>
+the other word worth knowing is <strong>watermark</strong>, which is the engine's promise that it has seen everything up to a given moment.
+telemetry arrives late and out of order, so the promise leaves a two second allowance, and anything that turns up later than that is counted but not trusted.
+</p>
+
+<h2>how an event gets in</h2>
+
+<p>
+there's really only one loop in the whole engine, and everything you see on the page falls out of it.
+here's a single event making the trip from disk to a pixel.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 600" role="img" aria-labelledby="flow-title flow-desc">
+<title id="flow-title">one event, start to finish</title>
+<desc id="flow-desc">an event is read from disk stamped with the time it happened. the watermark for its partition decides whether it is on time, up to two seconds late, or later than that, in which case it is counted but kept out of query state. the window it belongs to absorbs it, updating a ddsketch percentile at alpha 0.01. the service's rolling median and mad baseline turns it into a z-score. whatever changed on screen, a heatmap cell, a timeline tick, a score, goes to the page in one websocket frame carrying a sequence number. the page redraws. if the page notices a gap in the sequence it asks for a resync and the engine sends its current snapshot so the stream can continue.</desc>
+
+<defs>
+<marker id="faultline-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path class="raft-arch__arrow" d="M 0 0 L 10 5 L 0 10 z"></path>
+</marker>
+</defs>
+
+<rect class="raft-arch__box" x="40" y="8" width="220" height="44"></rect>
+<text class="raft-arch__title" x="150" y="35" text-anchor="middle">the engine</text>
+
+<rect class="raft-arch__box" x="450" y="8" width="240" height="44"></rect>
+<text class="raft-arch__title" x="570" y="35" text-anchor="middle">this page</text>
+
+<line class="raft-arch__zone" x1="150" y1="52" x2="150" y2="72"></line>
+<line class="raft-arch__zone" x1="150" y1="120" x2="150" y2="136"></line>
+<line class="raft-arch__zone" x1="150" y1="198" x2="150" y2="214"></line>
+<line class="raft-arch__zone" x1="150" y1="262" x2="150" y2="278"></line>
+<line class="raft-arch__zone" x1="150" y1="326" x2="150" y2="486"></line>
+<line class="raft-arch__zone" x1="570" y1="52" x2="570" y2="370"></line>
+<line class="raft-arch__zone" x1="570" y1="432" x2="570" y2="534"></line>
+
+<rect class="raft-arch__box" x="40" y="72" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="92" text-anchor="middle">1. an event is read from disk</text>
+<text class="raft-arch__sub" x="150" y="108" text-anchor="middle">stamped with when it happened</text>
+
+<rect class="raft-arch__box" x="40" y="136" width="220" height="62"></rect>
+<text class="raft-arch__sub" x="150" y="156" text-anchor="middle">2. the watermark places it</text>
+<text class="raft-arch__sub" x="150" y="172" text-anchor="middle">on time, or up to 2s late, is fine.</text>
+<text class="raft-arch__sub" x="150" y="188" text-anchor="middle">later than that is counted, not trusted</text>
+
+<rect class="raft-arch__box" x="40" y="214" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="234" text-anchor="middle">3. its window absorbs it</text>
+<text class="raft-arch__sub" x="150" y="250" text-anchor="middle">p99 via a DDSketch, alpha 0.01</text>
+
+<rect class="raft-arch__box" x="40" y="278" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="298" text-anchor="middle">4. the baseline judges it</text>
+<text class="raft-arch__sub" x="150" y="314" text-anchor="middle">how far from this service's own normal?</text>
+
+<line class="raft-arch__edge" x1="262" y1="350" x2="448" y2="350" marker-end="url(#faultline-flow-arrow)"></line>
+<text class="raft-arch__edge-label" x="355" y="344" text-anchor="middle">5. one websocket frame: what changed, and a sequence number</text>
+
+<rect class="raft-arch__box" x="450" y="370" width="240" height="62"></rect>
+<text class="raft-arch__sub" x="570" y="390" text-anchor="middle">6. the page redraws</text>
+<text class="raft-arch__sub" x="570" y="406" text-anchor="middle">a heatmap cell, a timeline tick,</text>
+<text class="raft-arch__sub" x="570" y="422" text-anchor="middle">a score moving up the list</text>
+
+<line class="raft-arch__edge" x1="448" y1="462" x2="262" y2="462" marker-end="url(#faultline-flow-arrow)"></line>
+<text class="raft-arch__edge-label" x="355" y="456" text-anchor="middle">7. missed a number? ask for a resync</text>
+
+<rect class="raft-arch__box" x="40" y="486" width="220" height="48"></rect>
+<text class="raft-arch__sub" x="150" y="506" text-anchor="middle">8. the engine sends its snapshot</text>
+<text class="raft-arch__sub" x="150" y="522" text-anchor="middle">and the stream picks up from there</text>
+
+<text class="raft-arch__sub" x="360" y="566" text-anchor="middle">pressing play runs this loop at ten times real time, about 37 frames a second to the page.</text>
+<text class="raft-arch__sub" x="360" y="584" text-anchor="middle">scrub backwards and the scores empty out, because a score only ever counts evidence up to the cursor.</text>
+</svg>
+</div>
+
+<p>
+step 2 is the one that took me longest to respect.
+a metric that shows up late isn't wrong, it's late, so a window that already closed gets one more second to change its mind, and the ui draws the revision rather than pretending the first answer was final.
+</p>
+
+<p>
+step 3 is why the percentiles are approximate.
+an exact p99 means keeping every sample sorted, which doesn't fit in a stream, so each window keeps a <strong>ddsketch</strong> instead, a set of logarithmic buckets that answers within one percent.
+the heatmap, the sql engine, and the benchmarks share that one sketch, so a query and a pixel provably agree.
+</p>
+
+<h2>what a verdict looks like</h2>
+
+<p>
+this is the guided incident in the box above, one row per moment.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 63 720 497" role="img" aria-labelledby="verdict-title verdict-desc">
+<title id="verdict-title">how five services become one ranked answer</title>
+<desc id="verdict-desc">five services, left to right: frontend, checkout, recommendation, cart, catalog. at first every service sits inside its own rolling baseline and nothing is flagged. at five seconds a deployment lands on recommendation, which puts a marker on the timeline but proves nothing by itself. two seconds later recommendation's memory strays past its baseline and it is flagged first, which is what the temporal precedence feature records. checkout calls recommendation and the frontend calls checkout, so their latency and errors follow and they are flagged too, and failed requests all route through recommendation. the fixed weighted sum then ranks recommendation first at 0.86; checkout and the frontend score too, but the contradiction penalty pulls them down because they went wrong after the service they depend on.</desc>
+
+<circle class="raft-arch__dot" cx="40" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="64" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="88" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="112" cy="90" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="90" r="8"></circle>
+<text class="raft-arch__title" x="220" y="82">everything is fine</text>
+<text class="raft-arch__sub" x="220" y="104">each service has a rolling baseline of its own normal, a median and a spread</text>
+<text class="raft-arch__sub" x="220" y="120">over the last few minutes. nothing has strayed, so nothing is flagged.</text>
+
+<line class="raft-arch__zone" x1="40" y1="146" x2="690" y2="146"></line>
+
+<circle class="raft-arch__dot" cx="40" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="64" cy="190" r="8"></circle>
+<circle class="raft-arch__ring" cx="88" cy="190" r="13"></circle>
+<circle class="raft-arch__dot" cx="88" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="112" cy="190" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="190" r="8"></circle>
+<text class="raft-arch__title" x="220" y="182">a deploy lands on recommendation</text>
+<text class="raft-arch__sub" x="220" y="204">five seconds in, the timeline gets a marker. on its own that proves nothing,</text>
+<text class="raft-arch__sub" x="220" y="220">and the score says so: change proximity is one of nine inputs, weighted a tenth.</text>
+
+<line class="raft-arch__zone" x1="40" y1="246" x2="690" y2="246"></line>
+
+<circle class="raft-arch__dot" cx="40" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="64" cy="290" r="8"></circle>
+<circle class="raft-arch__ring" cx="88" cy="290" r="13"></circle>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="88" cy="290" r="8"></circle>
+<path class="raft-arch__x" d="M 82 284 L 94 296 M 82 296 L 94 284"></path>
+<circle class="raft-arch__dot" cx="112" cy="290" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="290" r="8"></circle>
+<text class="raft-arch__title" x="220" y="282">its memory strays first</text>
+<text class="raft-arch__sub" x="220" y="304">the z-score climbs past the baseline and recommendation is flagged, before</text>
+<text class="raft-arch__sub" x="220" y="320">anything that calls it. that order is what temporal precedence measures.</text>
+
+<line class="raft-arch__zone" x1="40" y1="346" x2="690" y2="346"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="390" r="8"></circle>
+<path class="raft-arch__x" d="M 34 384 L 46 396 M 34 396 L 46 384"></path>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="64" cy="390" r="8"></circle>
+<path class="raft-arch__x" d="M 58 384 L 70 396 M 58 396 L 70 384"></path>
+<circle class="raft-arch__ring" cx="88" cy="390" r="13"></circle>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="88" cy="390" r="8"></circle>
+<path class="raft-arch__x" d="M 82 384 L 94 396 M 82 396 L 94 384"></path>
+<circle class="raft-arch__dot" cx="112" cy="390" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="390" r="8"></circle>
+<text class="raft-arch__title" x="220" y="382">the symptoms spread</text>
+<text class="raft-arch__sub" x="220" y="404">checkout calls recommendation and the frontend calls checkout, so two seconds</text>
+<text class="raft-arch__sub" x="220" y="420">later their latency and errors follow. every failed request routes through recommendation.</text>
+
+<line class="raft-arch__zone" x1="40" y1="446" x2="690" y2="446"></line>
+
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="40" cy="490" r="8"></circle>
+<path class="raft-arch__x" d="M 34 484 L 46 496 M 34 496 L 46 484"></path>
+<circle class="raft-arch__dot raft-arch__dot--dead" cx="64" cy="490" r="8"></circle>
+<path class="raft-arch__x" d="M 58 484 L 70 496 M 58 496 L 70 484"></path>
+<circle class="raft-arch__dot raft-arch__dot--leader" cx="88" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="112" cy="490" r="8"></circle>
+<circle class="raft-arch__dot" cx="136" cy="490" r="8"></circle>
+<text class="raft-arch__title" x="220" y="482">the verdict: recommendation, at 0.86</text>
+<text class="raft-arch__sub" x="220" y="504">checkout and the frontend score too, and the contradiction penalty pulls them</text>
+<text class="raft-arch__sub" x="220" y="520">down: they went wrong after the service they depend on. click the 0.86 to see all nine parts.</text>
+</svg>
+</div>
+
+<p>
+the crossed dots are services that strayed from their own normal, the dashed halo is a deploy that landed on one, and the filled dot is the one faultline ranks first.
+left to right they're frontend, checkout, recommendation, cart, and catalog, and the two that never get flagged are the ones nobody on the failing path calls.
+</p>
+
+<p>
+the same fifteen seconds as the engine's own numbers, straight from the heatmap:
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 420" role="img" aria-labelledby="lat-title lat-desc">
+<title id="lat-title">the guided incident, as the engine sees it</title>
+<desc id="lat-desc">p99 latency per service over the fifteen seconds of the guided incident, on the event-time clock. all five services sit at 40 milliseconds. a deployment marker lands at five seconds. recommendation starts climbing in the same second and reaches 314 milliseconds by the end. checkout and the frontend start climbing two seconds later, at seven seconds, and end near 202 milliseconds, following the same curve as each other. cart and the product catalog stay flat at 40 the whole time. the values are the ddsketch p99 from the heatmap, so the chart and the box above agree.</desc>
+<line class="raft-arch__zone" x1="60" y1="330.0" x2="700" y2="330.0"></line>
+<text class="raft-arch__sub" x="52" y="334.0" text-anchor="end">0</text>
+<line class="raft-arch__zone" x1="60" y1="241.8" x2="700" y2="241.8"></line>
+<text class="raft-arch__sub" x="52" y="245.76470588235293" text-anchor="end">100</text>
+<line class="raft-arch__zone" x1="60" y1="153.5" x2="700" y2="153.5"></line>
+<text class="raft-arch__sub" x="52" y="157.52941176470588" text-anchor="end">200</text>
+<line class="raft-arch__zone" x1="60" y1="65.3" x2="700" y2="65.3"></line>
+<text class="raft-arch__sub" x="52" y="69.29411764705884" text-anchor="end">300</text>
+<text class="raft-arch__sub" x="52" y="20" text-anchor="end">p99 ms</text>
+<text class="raft-arch__sub" x="60.0" y="348" text-anchor="middle">0s</text>
+<text class="raft-arch__sub" x="273.33333333333337" y="348" text-anchor="middle">5s</text>
+<text class="raft-arch__sub" x="486.6666666666667" y="348" text-anchor="middle">10s</text>
+<text class="raft-arch__sub" x="700.0" y="348" text-anchor="middle">15s</text>
+<line class="raft-arch__edge" x1="60" y1="330" x2="700" y2="330"></line>
+<text class="raft-arch__sub" x="380" y="368" text-anchor="middle">event time, not wall time: when it happened, not when it arrived</text>
+<line class="raft-arch__zone" x1="273.3" y1="24" x2="273.3" y2="330" style="stroke:#000"></line>
+<text class="raft-arch__sub" x="279.33333333333337" y="36" text-anchor="start">deploy lands on recommendation</text>
+<polyline points="60.0,294.7 102.7,294.7 145.3,294.7 188.0,294.7 230.7,294.7 273.3,294.7 316.0,294.7 358.7,294.7 401.3,294.7 444.0,294.7 486.7,294.7 529.3,294.7 572.0,294.7 614.7,294.7 657.3,294.7 700.0,294.7" style="fill:none;stroke:#cccccc;stroke-width:1.25"></polyline>
+<polyline points="60.0,294.7 102.7,294.7 145.3,294.7 188.0,294.7 230.7,294.7 273.3,294.7 316.0,294.7 358.7,294.7 401.3,294.7 444.0,294.7 486.7,294.7 529.3,294.7 572.0,294.7 614.7,294.7 657.3,294.7 700.0,294.7" style="fill:none;stroke:#cccccc;stroke-width:1.25;stroke-dasharray:4 3"></polyline>
+<polyline points="60.0,294.7 102.7,294.7 145.3,294.7 188.0,294.7 230.7,294.7 273.3,294.7 316.0,294.7 358.7,278.3 401.3,263.0 444.0,246.5 486.7,232.0 529.3,215.0 572.0,200.3 614.7,183.8 657.3,168.4 700.0,151.4" style="fill:none;stroke:#777777;stroke-width:1.5"></polyline>
+<polyline points="60.0,294.7 102.7,294.7 145.3,294.7 188.0,294.7 230.7,294.7 273.3,294.7 316.0,294.7 358.7,278.3 401.3,263.0 444.0,246.5 486.7,232.0 529.3,215.0 572.0,200.3 614.7,183.8 657.3,168.4 700.0,151.4" style="fill:none;stroke:#777777;stroke-width:1.5;stroke-dasharray:6 3"></polyline>
+<polyline points="60.0,294.7 102.7,294.7 145.3,294.7 188.0,294.7 230.7,294.7 273.3,272.9 316.0,251.4 358.7,228.0 401.3,205.4 444.0,183.8 486.7,161.8 529.3,140.4 572.0,116.2 614.7,98.4 657.3,74.1 700.0,52.7" style="fill:none;stroke:#000000;stroke-width:1.75"></polyline>
+<text class="raft-arch__sub" x="696.0" y="44.73366769659822" text-anchor="end">recommendation, 314 ms</text>
+<text class="raft-arch__sub" x="696.0" y="143.4330028154519" text-anchor="end">checkout and frontend, 202 ms</text>
+<text class="raft-arch__sub" x="696.0" y="286.70588235294116" text-anchor="end">cart and catalog, flat at 40 ms</text>
+<text class="raft-arch__sub" x="407.3333333333333" y="252.94117647058823" text-anchor="start">the callers follow two seconds later</text>
+<text class="raft-arch__sub" x="360" y="400" text-anchor="middle">this is the order a dashboard cannot show you, because by the time you open it, all three lines are already high.</text>
+</svg>
+</div>
+
+<p>
+the thing to notice is the two second gap between the black line leaving 40 and the grey ones following.
+that gap is the whole case for replay: it's the evidence that recommendation went first, and it only exists on the event-time clock.
+a dashboard opened at second twelve shows three high lines and no order.
+</p>
+
+<p>
+the weights are a starting hypothesis, not a tuned optimum: anomaly strength gets a fifth, three features get fifteen percent, and the rest ten or five.
+they're fixed on purpose, because tuning them on the cases i'm about to report would make the report worthless.
+</p>
+
+<h2>how the pieces fit together</h2>
+
+<p>
+the engine is only part of the system, so the diagram below is worth reading in two halves.
+the top half is everything sitting behind the box above, and it shows how a click you make actually reaches the engine.
+the bottom half is what three of those clicks do once they land, which is where the streaming machinery stops being plumbing and starts being the point.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 700" role="img" aria-labelledby="fl-arch-title fl-arch-desc">
+<title id="fl-arch-title">how the pieces fit together</title>
+<desc id="fl-arch-desc">the page itself comes from vercel, but the app inside it talks over https and a websocket to a cloudflare tunnel, which is the only way in. behind the tunnel, on one small vm, faultlined holds up to 24 sessions of fifteen minutes each and drives play, pause, and seek. each session runs the engine: watermarks, windows, ddsketch percentiles, a temporal join, and the ranking. the engine reads incidents from parquet files on disk, one guided, sixteen synthetic, fifteen real, and writes checksummed checkpoints back to disk. the lower half shows what three clicks do. pressing play advances the event-time clock at ten times real time and streams projections to the page. pressing crash test destroys the session's memory and recovers it from the newest valid checkpoint, with zero duplicate evidence. pressing reveal fetches the ground truth from behind a gate the ranker never sees.</desc>
+
+<defs>
+<marker id="faultline-arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path class="raft-arch__arrow" d="M 0 0 L 10 5 L 0 10 z"></path>
+</marker>
+</defs>
+
+<rect class="raft-arch__box" x="250" y="8" width="220" height="52"></rect>
+<text class="raft-arch__title" x="360" y="30" text-anchor="middle">you, on this page</text>
+<text class="raft-arch__sub" x="360" y="49" text-anchor="middle">the page itself comes from vercel</text>
+
+<line class="raft-arch__zone" x1="0" y1="88" x2="720" y2="88"></line>
+<text class="raft-arch__sub" x="2" y="80">everything below runs on one small vm</text>
+
+<line class="raft-arch__edge" x1="360" y1="60" x2="360" y2="114" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="368" y="108">https and a websocket, the only way in</text>
+
+<rect class="raft-arch__box" x="270" y="116" width="180" height="44"></rect>
+<text class="raft-arch__title" x="360" y="143" text-anchor="middle">cloudflare tunnel</text>
+
+<line class="raft-arch__edge" x1="360" y1="160" x2="360" y2="194" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="368" y="182">play, seek, reveal, crash test</text>
+
+<rect class="raft-arch__box" x="230" y="196" width="260" height="52"></rect>
+<text class="raft-arch__title" x="360" y="219" text-anchor="middle">faultlined</text>
+<text class="raft-arch__sub" x="360" y="238" text-anchor="middle">up to 24 sessions, fifteen minutes each</text>
+
+<line class="raft-arch__edge" x1="360" y1="248" x2="360" y2="290" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="368" y="274">one engine per session</text>
+
+<rect class="raft-arch__box" x="230" y="292" width="260" height="68"></rect>
+<text class="raft-arch__title" x="360" y="315" text-anchor="middle">the engine</text>
+<text class="raft-arch__sub" x="360" y="334" text-anchor="middle">watermarks, windows, sketches,</text>
+<text class="raft-arch__sub" x="360" y="350" text-anchor="middle">a temporal join, and the ranking</text>
+
+<line class="raft-arch__edge" x1="230" y1="326" x2="132" y2="326" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="180" y="318" text-anchor="middle">reads</text>
+
+<line class="raft-arch__edge" x1="490" y1="326" x2="588" y2="326" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="540" y="318" text-anchor="middle">writes, reads back</text>
+
+<rect class="raft-arch__box" x="30" y="292" width="100" height="68"></rect>
+<text class="raft-arch__title" x="80" y="315" text-anchor="middle">incidents</text>
+<text class="raft-arch__sub" x="80" y="334" text-anchor="middle">parquet on disk.</text>
+<text class="raft-arch__sub" x="80" y="350" text-anchor="middle">1 guided, 16 fake, 15 real</text>
+
+<rect class="raft-arch__box" x="590" y="292" width="100" height="68"></rect>
+<text class="raft-arch__title" x="640" y="315" text-anchor="middle">checkpoints</text>
+<text class="raft-arch__sub" x="640" y="334" text-anchor="middle">on disk, sha256</text>
+<text class="raft-arch__sub" x="640" y="350" text-anchor="middle">per file</text>
+
+<line class="raft-arch__edge" x1="360" y1="360" x2="360" y2="402" marker-end="url(#faultline-arch-arrow)"></line>
+<text class="raft-arch__edge-label" x="368" y="386">projections, over the same websocket</text>
+
+<rect class="raft-arch__box" x="30" y="404" width="660" height="60"></rect>
+<text class="raft-arch__title" x="360" y="428" text-anchor="middle">what the page draws</text>
+<text class="raft-arch__sub" x="360" y="450" text-anchor="middle">service map, timeline, heatmap, ranking, evidence graph, trace waterfall, runtime inspector</text>
+
+<line class="raft-arch__zone" x1="0" y1="500" x2="720" y2="500"></line>
+<text class="raft-arch__sub" x="2" y="492">and here's what three of your clicks do inside</text>
+
+<text class="raft-arch__sub" x="360" y="524" text-anchor="middle">the rule underneath all three: the ranker only ever sees telemetry, never the answer</text>
+
+<rect class="raft-arch__box" x="30" y="540" width="200" height="140"></rect>
+<text class="raft-arch__title" x="130" y="564" text-anchor="middle">you press play</text>
+<text class="raft-arch__sub" x="130" y="590" text-anchor="middle">the event-time clock advances</text>
+<text class="raft-arch__sub" x="130" y="606" text-anchor="middle">at ten times real time. events</text>
+<text class="raft-arch__sub" x="130" y="622" text-anchor="middle">run the loop above, and the</text>
+<text class="raft-arch__sub" x="130" y="638" text-anchor="middle">scores change as evidence</text>
+<text class="raft-arch__sub" x="130" y="654" text-anchor="middle">arrives, not all at once.</text>
+
+<rect class="raft-arch__box" x="260" y="540" width="200" height="140"></rect>
+<text class="raft-arch__title" x="360" y="564" text-anchor="middle">you press crash test</text>
+<text class="raft-arch__sub" x="360" y="590" text-anchor="middle">the session's memory is</text>
+<text class="raft-arch__sub" x="360" y="606" text-anchor="middle">destroyed on purpose. it comes</text>
+<text class="raft-arch__sub" x="360" y="622" text-anchor="middle">back from the newest valid</text>
+<text class="raft-arch__sub" x="360" y="638" text-anchor="middle">checkpoint, skipping corrupt</text>
+<text class="raft-arch__sub" x="360" y="654" text-anchor="middle">ones, with no duplicate evidence.</text>
+
+<rect class="raft-arch__box" x="490" y="540" width="200" height="140"></rect>
+<text class="raft-arch__title" x="590" y="564" text-anchor="middle">you press reveal</text>
+<text class="raft-arch__sub" x="590" y="590" text-anchor="middle">the answer lives behind a gate</text>
+<text class="raft-arch__sub" x="590" y="606" text-anchor="middle">on the api that the ranker</text>
+<text class="raft-arch__sub" x="590" y="622" text-anchor="middle">never calls, so the score you</text>
+<text class="raft-arch__sub" x="590" y="638" text-anchor="middle">saw was made blind. same gate</text>
+<text class="raft-arch__sub" x="590" y="654" text-anchor="middle">the benchmark runs behind.</text>
+</svg>
+</div>
+
+<p>
+the app you're clicking is a bundle built from the faultline repo and shipped with this wiki.
+everything it talks to is on the other side of the tunnel, and it talks to it directly, because vercel can't proxy a websocket.
+</p>
+
+<p>
+the third box is the one i care about most.
+in every incident, real or synthetic, the injected fault is written down in a labels file, and the api only hands it out when a request explicitly asks for it.
+the ranker has no such request in it, and the benchmark that produces the numbers below runs with the same gate closed.
+</p>
+
+<h2>how i built it</h2>
+
+<p>
+i started at the bottom, with a canonical envelope for every kind of event and a replay clock that reads them off parquet in event-time order, because nothing above that layer means much if two runs of the same incident can disagree.
+the engine came next: watermarks per partition, tumbling and hopping windows that can revise themselves, the ddsketch percentile, and a left interval join that lines deployments up against the anomalies near them.
+</p>
+
+<p>
+then the parts a recruiter can see: the ranking, the trace critical path, checkpoints, and a small sql planner, because a query is a ui too.
+the planner takes a subset of sql, lowers it through nine logical nodes and six rewrite rules, and runs it on the same operators the heatmap uses, which is why a p99 from the sql box and the p99 in the heatmap are the same number.
+</p>
+
+<p>
+all of that worked on my fixtures, and then i loaded a real case and made my first mistake visible: the streaming heatmap rebuilds itself from every event on every publish.
+on a fifteen second synthetic incident that's nothing.
+on a real case with 155 thousand events it wedged the server for about seventy seconds per publish, so for now anything past twenty thousand events loads precomputed and the streaming toggle politely refuses.
+the incremental rebuild is the real fix, and i haven't built it.
+</p>
+
+<p>
+the second mistake was really four, and i found them all in one afternoon by running the browser tests against the server under load instead of one at a time.
+sessions whose tab had closed were never evicted.
+playback kept running for sessions nobody was watching.
+the watermark metrics were recomputed on every single event, walking every partition through a string-keyed map, which is invisible on a few hundred events and ruinous on 155 thousand.
+and the size gate above didn't exist yet.
+all four are fixed.
+</p>
+
+<p>
+the third mistake is the one that embarrasses me most, because it wasn't a bug in the engine, it was a number i believed.
+my benchmark harness reported batching speedups of six to fifteen times, and i put them in the readme and on this page.
+then i read the harness properly: it took two clock readings and pushed to a vector inside the timed loop, so at batch size one it was mostly timing itself, and two of the workloads never touched an engine operator at all.
+that table is withdrawn, and no throughput number gets claimed until the harness measures the real thing.
+</p>
+
+<p>
+the fourth mistake arrived when i ran the benchmark's baselines myself, on the exact same real cases, and lost to the simplest one.
+that story gets its own section below, because it's the most useful thing on this page.
+</p>
+
+<p>
+that's four mistakes in all, and the two that hurt most weren't bugs.
+they were numbers i'd said out loud before checking.
+</p>
+
+<h2>what's in the box</h2>
+
+<p>
+the box at the top is a recorded incident, and the engine replaying it is the real one, running on a real server.
+press play and the clock moves at ten times real time: a deploy lands, one service's memory climbs, and the services that call it slow down a few seconds later.
+the number next to each service is faultline's score for it being the cause, and the answer stays hidden until you press reveal, so you get to guess first.
+</p>
+
+<p>
+the picker holds six incidents.
+one is the guided one, one is from my synthetic test suite, and four are real, from a public benchmark that injects faults into a demo shop running on a real cluster.
+faultline gets two of the real ones right, misses one by a single rank, and misses the last one badly.
+those two are in there on purpose, and the next section is why.
+</p>
+
+<h2>what real data did to my numbers</h2>
+
+<p>
+on my 16-incident synthetic suite the ranking is perfect: 100% top-1, robust to every single-feature ablation.
+satisfying, and nearly meaningless, because i generated those faults, so of course they're separable.
+that suite is a smoke test of the pipeline, not evidence of anything about the world.
+</p>
+
+<p>
+so i took 15 real cases from <a href="https://arxiv.org/abs/2412.17015" rel="noopener noreferrer" target="_blank">rcaeval</a>, a public benchmark that injects faults into google's online boutique demo on a real cluster and records the metrics, logs, and traces.
+i used the cpu, memory, and network delay faults, one per service, and ran the same untuned pipeline blind.
+then i ran two methods that ship in the benchmark's own code on the same 15 cases, with the same service-level scoring: nsigma, the simplest baseline in there, and baro, a published method.
+one difference worth knowing: the benchmark hands its methods the moment the fault was injected, so they compare before with after, while faultline has to find the onset itself.
+this is the table:
+</p>
+
+<div class="raft-bench" role="region" aria-label="head to head on 15 real rcaeval re2-ob cases, measured 2026-08-03, untuned">
+<table class="raft-bench__table">
+<thead>
+<tr>
+<th scope="col">method</th>
+<th scope="col">what it is</th>
+<th scope="col">top-1</th>
+<th scope="col">top-3</th>
+<th scope="col">avg@5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nsigma</td>
+<td>a plain z-score threshold on the metrics</td>
+<td>93.3%</td>
+<td>at least 93.3%</td>
+<td>0.96</td>
+</tr>
+<tr>
+<td>baro</td>
+<td>a published bayesian change-point method</td>
+<td>13.3%</td>
+<td>93.3%</td>
+<td>0.76</td>
+</tr>
+<tr>
+<td>faultline</td>
+<td>nine features, fixed weights, untuned</td>
+<td>26.7%</td>
+<td>46.7%</td>
+<td>0.41</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>
+a plain median-and-spread z-score finds the broken service 93% of the time where my whole evidence pipeline gets 27%.
+that's a loss, and it's a diagnostic one: faultline already computes that exact z-score as one of its nine features, so the other eight are burying the signal rather than sharpening it.
+the rank distribution agrees, because it's bimodal: seven cases land at rank 1 to 3, eight cases at rank 8 to 12, and almost nothing in between.
+</p>
+
+<p>
+here's the hard miss from the picker, drawn the same way as the shop above, but with the graph the engine actually reconstructed from the real traces and the rank it gave every service.
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 470" role="img" aria-labelledby="real-title real-desc">
+<title id="real-title">a real cpu fault on the email service, and why it lands at rank 12</title>
+<desc id="real-desc">the call graph the engine actually reconstructed from the sampled traces of a real rcaeval case: the frontend calls checkout, currency, the product catalog, and recommendation; checkout calls currency, email, payment, and the product catalog; recommendation calls the product catalog. every one of the twelve services is drawn crossed, because every one of them strayed from its own baseline during the fault. five services, ad, cart, shipping, redis, and the external frontend, appear only in metrics because the one-in-eight trace sample never caught a call to them. the true cause, email, is filled and ranked twelfth at 0.15; currency is ranked first at 0.39.</desc>
+<defs><marker id="real-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="raft-arch__arrow" d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs>
+<line class="raft-arch__edge" x1="300" y1="196" x2="480" y2="158" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="196" x2="300" y2="258" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="196" x2="480" y2="258" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="196" x2="120" y2="258" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="96" x2="300" y2="158" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="96" x2="480" y2="158" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="96" x2="120" y2="258" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="300" y1="96" x2="120" y2="158" marker-end="url(#real-arrow)"></line>
+<line class="raft-arch__edge" x1="120" y1="196" x2="120" y2="258" marker-end="url(#real-arrow)"></line>
+<rect class="raft-arch__box" x="248.0" y="60" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="300" y="83" text-anchor="middle">frontend</text>
+<path class="raft-arch__x" d="M 246.0 58 L 258.0 70 M 246.0 70 L 258.0 58"></path>
+<text class="raft-arch__sub" x="300" y="110" text-anchor="middle">rank 8, 0.31</text>
+<rect class="raft-arch__box" x="68.0" y="160" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="120" y="183" text-anchor="middle">recommendation</text>
+<path class="raft-arch__x" d="M 66.0 158 L 78.0 170 M 66.0 170 L 78.0 158"></path>
+<text class="raft-arch__sub" x="120" y="210" text-anchor="middle">rank 2, 0.37</text>
+<rect class="raft-arch__box" x="248.0" y="160" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="300" y="183" text-anchor="middle">checkout</text>
+<path class="raft-arch__x" d="M 246.0 158 L 258.0 170 M 246.0 170 L 258.0 158"></path>
+<text class="raft-arch__sub" x="300" y="210" text-anchor="middle">rank 4, 0.33</text>
+<rect class="raft-arch__box" x="428.0" y="160" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="480" y="183" text-anchor="middle">currency</text>
+<path class="raft-arch__x" d="M 426.0 158 L 438.0 170 M 426.0 170 L 438.0 158"></path>
+<text class="raft-arch__sub" x="480" y="210" text-anchor="middle">rank 1, 0.39</text>
+<rect class="raft-arch__box" x="68.0" y="260" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="120" y="283" text-anchor="middle">productcatalog</text>
+<path class="raft-arch__x" d="M 66.0 258 L 78.0 270 M 66.0 270 L 78.0 258"></path>
+<text class="raft-arch__sub" x="120" y="310" text-anchor="middle">rank 3, 0.33</text>
+<rect class="raft-arch__box" x="248.0" y="260" width="104" height="36" style="fill:#000"></rect>
+<text class="raft-arch__sub" x="300" y="283" text-anchor="middle" style="fill:#fff">email</text>
+<path class="raft-arch__x" d="M 246.0 258 L 258.0 270 M 246.0 270 L 258.0 258"></path>
+<text class="raft-arch__sub" x="300" y="310" text-anchor="middle">rank 12, 0.15</text>
+<rect class="raft-arch__box" x="428.0" y="260" width="104" height="36"></rect>
+<text class="raft-arch__sub" x="480" y="283" text-anchor="middle">payment</text>
+<path class="raft-arch__x" d="M 426.0 258 L 438.0 270 M 426.0 270 L 438.0 258"></path>
+<text class="raft-arch__sub" x="480" y="310" text-anchor="middle">rank 11, 0.16</text>
+<line class="raft-arch__zone" x1="560" y1="40" x2="560" y2="350"></line>
+<text class="raft-arch__sub" x="636" y="58" text-anchor="middle">seen only in metrics:</text>
+<text class="raft-arch__sub" x="636" y="74" text-anchor="middle">the 1-in-8 trace sample</text>
+<text class="raft-arch__sub" x="636" y="90" text-anchor="middle">never caught a call to them</text>
+<rect class="raft-arch__box" x="584" y="108" width="104" height="28"></rect>
+<text class="raft-arch__sub" x="636" y="127" text-anchor="middle">shipping</text>
+<path class="raft-arch__x" d="M 582 106 L 594 118 M 582 118 L 594 106"></path>
+<text class="raft-arch__sub" x="636" y="150" text-anchor="middle">rank 5, 0.32</text>
+<rect class="raft-arch__box" x="584" y="158" width="104" height="28"></rect>
+<text class="raft-arch__sub" x="636" y="177" text-anchor="middle">ad</text>
+<path class="raft-arch__x" d="M 582 156 L 594 168 M 582 168 L 594 156"></path>
+<text class="raft-arch__sub" x="636" y="200" text-anchor="middle">rank 6, 0.31</text>
+<rect class="raft-arch__box" x="584" y="208" width="104" height="28"></rect>
+<text class="raft-arch__sub" x="636" y="227" text-anchor="middle">cart</text>
+<path class="raft-arch__x" d="M 582 206 L 594 218 M 582 218 L 594 206"></path>
+<text class="raft-arch__sub" x="636" y="250" text-anchor="middle">rank 7, 0.31</text>
+<rect class="raft-arch__box" x="584" y="258" width="104" height="28"></rect>
+<text class="raft-arch__sub" x="636" y="277" text-anchor="middle">frontend-external</text>
+<path class="raft-arch__x" d="M 582 256 L 594 268 M 582 268 L 594 256"></path>
+<text class="raft-arch__sub" x="636" y="300" text-anchor="middle">rank 9, 0.31</text>
+<rect class="raft-arch__box" x="584" y="308" width="104" height="28"></rect>
+<text class="raft-arch__sub" x="636" y="327" text-anchor="middle">redis</text>
+<path class="raft-arch__x" d="M 582 306 L 594 318 M 582 318 L 594 306"></path>
+<text class="raft-arch__sub" x="636" y="350" text-anchor="middle">rank 10, 0.20</text>
+<text class="raft-arch__sub" x="360" y="392" text-anchor="middle">every box is crossed: on real telemetry, everything strays at once, so anomaly strength is a tie twelve ways.</text>
+<text class="raft-arch__sub" x="360" y="410" text-anchor="middle">the ranking is then decided by the small features, and by the penalty, which is exactly backwards for a leaf service.</text>
+<text class="raft-arch__sub" x="360" y="428" text-anchor="middle">a plain z-score threshold ignores the graph entirely and, on these fifteen cases, gets the answer 93% of the time.</text>
+</svg>
+</div>
+
+<p>
+compare it to the clean picture further up.
+there, one box was sick and three followed it.
+here, all twelve strayed from their own baseline inside the fault window, because a real shop under a real load test is noisy everywhere, and a cpu hog on a leaf service that sees about one call in three hundred barely moves the shape of anything.
+so the feature i weighted highest, anomaly strength, is a twelve-way tie, and the ranking gets decided by the small features and the penalty.
+</p>
+
+<p>
+and the penalty is exactly backwards here.
+email is a leaf: checkout calls it, and nothing calls it after that.
+when the services that call it wobble a moment before it does, the contradiction rule reads that as the callers went wrong first, so this can't be email, and docks it the full tenth.
+that tenth is the entire distance between rank 1 and rank 12, which you can see when the two verdicts are taken apart side by side:
+</p>
+
+<div class="raft-arch-wrap">
+<svg class="raft-arch" viewBox="0 0 720 470" role="img" aria-labelledby="score-title score-desc">
+<title id="score-title">two verdicts taken apart</title>
+<desc id="score-desc">stacked bars of the nine score components for the top three candidates in the guided incident, and for three candidates in a real cpu fault on the email service. in the guided case recommendation scores 0.86, with anomaly strength, precedence, failed trace coverage, critical path, topology, and the nearby deploy all contributing, while checkout and the frontend score 0.48 and 0.46 mostly from anomaly strength and failed traces. in the real case every service has the same saturated anomaly strength and nearly the same precedence, so the currency service leads at 0.39 on a hair of topology, and the email service, the true cause, sits at 0.15 because it takes the full contradiction penalty.</desc>
+<text class="raft-arch__title" x="20" y="22" text-anchor="start">the guided incident: recommendation, taken apart</text>
+<text class="raft-arch__sub" x="105" y="57" text-anchor="end">recommendation</text>
+<rect x="180.0" y="40" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="56" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="40" width="75.0" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="317.5" y="56" text-anchor="middle" style="fill:#fff">precedence</text>
+<rect x="355.0" y="40" width="65.6" height="24" style="fill:#4a4a4a;stroke:#fff;stroke-width:1"></rect>
+<rect x="420.6" y="40" width="55.5" height="24" style="fill:#6a6a6a;stroke:#fff;stroke-width:1"></rect>
+<rect x="476.2" y="40" width="25.0" height="24" style="fill:#8a8a8a;stroke:#fff;stroke-width:1"></rect>
+<rect x="501.2" y="40" width="50.0" height="24" style="fill:#a6a6a6;stroke:#fff;stroke-width:1"></rect>
+<rect x="551.2" y="40" width="50.0" height="24" style="fill:#bfbfbf;stroke:#fff;stroke-width:1"></rect>
+<rect x="601.2" y="40" width="8.3" height="24" style="fill:#d9d9d9;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__title" x="617.4939192427511" y="57" text-anchor="start">0.86</text>
+<text class="raft-arch__sub" x="105" y="97" text-anchor="end">checkout</text>
+<rect x="180.0" y="80" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="96" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="80" width="37.5" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<rect x="317.5" y="80" width="65.6" height="24" style="fill:#4a4a4a;stroke:#fff;stroke-width:1"></rect>
+<rect x="383.1" y="80" width="12.5" height="24" style="fill:#8a8a8a;stroke:#fff;stroke-width:1"></rect>
+<rect x="395.6" y="80" width="25.0" height="24" style="fill:#a6a6a6;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__title" x="428.625" y="97" text-anchor="start">0.48</text>
+<text class="raft-arch__sub" x="105" y="137" text-anchor="end">frontend</text>
+<rect x="180.0" y="120" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="136" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="120" width="37.5" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<rect x="317.5" y="120" width="75.0" height="24" style="fill:#4a4a4a;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="355.0" y="136" text-anchor="middle" style="fill:#fff">failed traces</text>
+<rect x="392.5" y="120" width="19.5" height="24" style="fill:#6a6a6a;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__title" x="419.9644140905823" y="137" text-anchor="start">0.46</text>
+<text class="raft-arch__title" x="20" y="190" text-anchor="start">a real cpu fault on email, taken apart. rank 1, rank 2, and the true cause at rank 12</text>
+<text class="raft-arch__sub" x="105" y="225" text-anchor="end">currency</text>
+<rect x="180.0" y="208" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="224" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="208" width="75.0" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="317.5" y="224" text-anchor="middle" style="fill:#fff">precedence</text>
+<rect x="355.0" y="208" width="9.1" height="24" style="fill:#8a8a8a;stroke:#fff;stroke-width:1"></rect>
+<rect x="364.1" y="208" width="9.1" height="24" style="fill:#a6a6a6;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__title" x="381.18181818181813" y="225" text-anchor="start">0.39</text>
+<text class="raft-arch__sub" x="105" y="265" text-anchor="end">recommendation</text>
+<rect x="180.0" y="248" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="264" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="248" width="75.0" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="317.5" y="264" text-anchor="middle" style="fill:#fff">precedence</text>
+<rect x="355.0" y="248" width="4.5" height="24" style="fill:#8a8a8a;stroke:#fff;stroke-width:1"></rect>
+<rect x="359.5" y="248" width="4.5" height="24" style="fill:#a6a6a6;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__title" x="372.0909090909091" y="265" text-anchor="start">0.37</text>
+<text class="raft-arch__sub" x="105" y="305" text-anchor="end">email</text>
+<rect x="180.0" y="288" width="100.0" height="24" style="fill:#000000;stroke:#fff;stroke-width:1"></rect>
+<text class="raft-arch__sub" x="230.0" y="304" text-anchor="middle" style="fill:#fff">anomaly</text>
+<rect x="280.0" y="288" width="6.8" height="24" style="fill:#2a2a2a;stroke:#fff;stroke-width:1"></rect>
+<rect x="286.8" y="288" width="9.1" height="24" style="fill:#8a8a8a;stroke:#fff;stroke-width:1"></rect>
+<rect x="295.9" y="288" width="9.1" height="24" style="fill:#a6a6a6;stroke:#fff;stroke-width:1"></rect>
+<rect x="130.0" y="288" width="50.0" height="24" style="fill:none;stroke:#000;stroke-width:1.25;stroke-dasharray:3 2"></rect>
+<text class="raft-arch__sub" x="155.0" y="304" text-anchor="middle">-0.10</text>
+<text class="raft-arch__title" x="312.99999999999994" y="305" text-anchor="start">0.15</text>
+<text class="raft-arch__sub" x="20" y="340" text-anchor="start">the nine parts, left to right in every bar:</text>
+<rect x="20" y="350" width="14" height="14" style="fill:#000000"></rect>
+<text class="raft-arch__sub" x="40" y="362" text-anchor="start">anomaly</text>
+<rect x="156" y="350" width="14" height="14" style="fill:#2a2a2a"></rect>
+<text class="raft-arch__sub" x="176" y="362" text-anchor="start">precedence</text>
+<rect x="292" y="350" width="14" height="14" style="fill:#4a4a4a"></rect>
+<text class="raft-arch__sub" x="312" y="362" text-anchor="start">failed traces</text>
+<rect x="428" y="350" width="14" height="14" style="fill:#6a6a6a"></rect>
+<text class="raft-arch__sub" x="448" y="362" text-anchor="start">critical path</text>
+<rect x="564" y="350" width="14" height="14" style="fill:#8a8a8a"></rect>
+<text class="raft-arch__sub" x="584" y="362" text-anchor="start">downstream</text>
+<rect x="20" y="376" width="14" height="14" style="fill:#a6a6a6"></rect>
+<text class="raft-arch__sub" x="40" y="388" text-anchor="start">topology</text>
+<rect x="156" y="376" width="14" height="14" style="fill:#bfbfbf"></rect>
+<text class="raft-arch__sub" x="176" y="388" text-anchor="start">deploy nearby</text>
+<rect x="292" y="376" width="14" height="14" style="fill:#d9d9d9"></rect>
+<text class="raft-arch__sub" x="312" y="388" text-anchor="start">logs</text>
+<rect x="428" y="376" width="14" height="14" style="fill:none;stroke:#000;stroke-width:1.25;stroke-dasharray:3 2"></rect>
+<text class="raft-arch__sub" x="448" y="388" text-anchor="start">contradiction</text>
+<text class="raft-arch__sub" x="360" y="430" text-anchor="middle">the dashed box hanging off the left is the contradiction penalty: a service whose callers went wrong before it did loses a tenth.</text>
+<text class="raft-arch__sub" x="360" y="448" text-anchor="middle">in the real case that tenth is the entire gap between rank 1 and rank 12.</text>
+</svg>
+</div>
+
+<p>
+in the guided case the bar is long because six kinds of evidence agree, and the deploy sitting right before the fault adds its tenth on top.
+in the real case the bars are identical up to the third segment, and the winner is winning on a hair of topology.
+this is what the loss looks like from the inside.
+</p>
+
+<p>
+the ablations say which features are doing real work.
+remove topology consistency and top-1 collapses from 26.7% to 6.7%; remove temporal precedence and it falls to 13.3%.
+remove change proximity and nothing moves, because rcaeval has no deployment events, so a feature i weighted at a tenth is structurally dead on every real case.
+the synthetic suite could never have told me that.
+</p>
+
+<p>
+the fix is written down next to the numbers rather than built: score magnitude first, and use topology and precedence as tie-breakers instead of dominant weights, then re-run the same 15 cases.
+until that's done, no accuracy number goes on my résumé, and this page reports the loss.
+publishing a loss feels bad for exactly one evening.
+shipping a number you can't defend feels worse forever.
+</p>
+
+<h2>what it does today</h2>
+
+<p>
+the engine numbers that survived the harness cleanup are the checkpoint ones, measured on my laptop and regenerated by a committed script that stamps the commit, machine, toolchain, seed, and dataset checksum.
+</p>
+
+<div class="raft-bench" role="region" aria-label="checkpoint and recovery, measured 2026-07-28 on an apple m4 pro">
+<table class="raft-bench__table">
+<thead>
+<tr>
+<th scope="col">metric</th>
+<th scope="col">p50</th>
+<th scope="col">p99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>checkpoint write, fsync included</td>
+<td>11.9 ms</td>
+<td>15.1 ms</td>
+</tr>
+<tr>
+<td>recovery, read and validate</td>
+<td>0.42 ms</td>
+<td>0.76 ms</td>
+</tr>
+<tr>
+<td>duplicate evidence after a forced crash</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>
+the phrase for that is <strong>checkpoint recovery with idempotent projections</strong>, never exactly-once, because the second promises something about the world and the first only about my disk.
+a checkpoint is written manifest-last with a checksum per file, and the pointer to the newest one flips only after a fully valid directory exists, so a crash mid-write leaves the previous one untouched.
+</p>
+
+<p>
+the demo server holds 24 sessions of fifteen minutes each, so if the box above says it's busy, that's the ceiling and not a crash.
+</p>
+
+<h2>what i'd still fix</h2>
+
+<ul>
+<li>the reranking, before anything else about accuracy. magnitude first, topology and precedence as tie-breakers, same 15 cases, and the table above gets a fourth row whether it improves or not.</li>
+<li>then the other 75 real cases. rcaeval has 90 for this system, and 15 is enough to learn i'm losing but not enough to tune on honestly. that needs a train and test split, with both numbers reported.</li>
+<li>the streaming heatmap should update incrementally instead of rebuilding from every event. the twenty thousand event gate is a bandage.</li>
+<li>the benchmark harness needs to time whole passes over real operators. until it does, the engine has no throughput number, and i'd rather have none than a wrong one.</li>
+<li>the four real cases in the picker were converted on my laptop from a 4.2gb download, so a fresh clone gets only the synthetic ones.</li>
+</ul>
+
+<h2>learn more</h2>
+
+<p>
+the code's at <a href="https://github.com/AnushSonone/faultline">faultline</a>, laid out roughly like this:
+</p>
+
+<ul>
+<li><code>crates/engine</code> is the watermarks, windows, the ddsketch percentile, the temporal join, and operator snapshots.</li>
+<li><code>crates/inference</code> is the baselines, the nine features, the fixed weights, and the evidence graph.</li>
+<li><code>crates/graph</code> builds trace dags and pulls out the critical path.</li>
+<li><code>crates/state</code> is the manifest-last checkpoints and the corrupt-fallback recovery.</li>
+<li><code>crates/planner</code> is the sql subset, the nine logical nodes, and explain.</li>
+<li><code>crates/api</code> is the sessions, the websocket, and the reveal gate.</li>
+<li><code>web/</code> is the react app, built into the bundle you're clicking.</li>
+<li><code>python/faultline_data</code> generates the synthetic incidents and converts the real ones.</li>
+</ul>
+
+<p>
+if streaming or root cause analysis is new to you, this is the order i'd go in:
+</p>
+
+<ol>
+<li>press play in the box above, watch the scores move, then scrub back to the start and watch them empty.</li>
+<li>read <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/" rel="noopener noreferrer" target="_blank">streaming 101</a> and <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/" rel="noopener noreferrer" target="_blank">102</a> by tyler akidau. event time and watermarks are the first half of this page, and he explains them better than i do.</li>
+<li>watch his talk below, which covers the same ground with pictures.</li>
+<li>read the <a href="https://arxiv.org/abs/1908.10693" rel="noopener noreferrer" target="_blank">ddsketch paper</a>, which is short, and then the <a href="https://arxiv.org/abs/2412.17015" rel="noopener noreferrer" target="_blank">rcaeval paper</a>, which is the dataset. <a href="https://github.com/phamquiluan/RCAEval" rel="noopener noreferrer" target="_blank">their code</a> runs the baselines i lost to in an afternoon.</li>
+<li>clone the repo, run <code>make demo</code>, and read <code>crates/inference/src/ranking.rs</code> with the table above open beside it.</li>
+</ol>
+
+<p>
+<iframe
+  title="the evolution of massive scale data processing, tyler akidau, strata 2017"
+  src="https://www.youtube-nocookie.com/embed/mz9evSdV_OI"
+  style="width:100%;aspect-ratio:16/9;border:1px solid #cccccc;background:#000;margin:1.25rem 0;"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen
+  loading="lazy"
+  referrerpolicy="strict-origin-when-cross-origin"
+></iframe>
+</p>
+
+<p>
+if you liked this, the sibling project is <a href="/blog/raft">come kill my cluster!</a>, a raft key-value store written from scratch that you can break live from the page.
+same idea in both: build the machinery yourself, run it in public, and report what it actually does.
+</p>
+</article>
+<div class="site-chrome">
+<div class="site-chrome__links">
+<p class="site-chrome-credit">
+heavily inspired by
+<a href="https://motherfuckingwebsite.com/">motherfuckingwebsite.com</a>
+</p>
+<a class="site-chrome__external" href="https://utexas.network/">utexas.network</a>
+</div>
+<div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
+</div>
+</main>
+<script src="/blog/faultline-demo/faultline-demo.iife.js?v=embed-2026-09-04" defer></script>
+<script defer src="/api/chat/widget"></script>
+</body>
+</html>

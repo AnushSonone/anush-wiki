@@ -15,6 +15,9 @@ every page below is plain html and safe to read directly.
 - [come kill my cluster!](https://anush.wiki/blog/raft): a raft key-value store written
   from scratch in go, running live on one oracle vm, with kill buttons anyone can press.
   covers the build story including two outages, and the measured throughput.
+- [who broke checkout?](https://anush.wiki/blog/faultline): faultline, an incident
+  replay and root-cause tool with a rust streaming engine written from scratch. live
+  demo embedded in the page, honest numbers including a benchmark it loses.
 - [profluento](https://anush.wiki/blog/profluento): lead scoring for wealth management
   firms. raised $100k, onboarded 15+ firms.
 - [college application journey](https://anush.wiki/blog/college-application-journey):
@@ -26,6 +29,10 @@ every page below is plain html and safe to read directly.
   grpc replication, and readindex reads. seven dockerized nodes on a 4-ocpu oracle vm,
   holding roughly 1,160 writes/s and 1,500 reads/s while visitors kill machines on
   purpose. code: https://github.com/AnushSonone/kill-my-cluster
+- **faultline** — rust streaming engine + deterministic rca: watermarks, ddsketch
+  percentiles, temporal joins, atomic checkpoints, a sql planner, and a nine-feature
+  evidence ranking, replaying real RCAEval incidents in the browser.
+  code: https://github.com/AnushSonone/faultline
 - **profluento** — node.js weighted-matrix lead scoring over 10+ normalized signals,
   async job routing on cloudflare queues with regional kv caching.
 - **lapsynk** — formula 1 telemetry copilot, 3rd of 733 at hacktx 2025.
