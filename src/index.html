@@ -48,14 +48,24 @@
     "https://github.com/anushsonone",
     "https://www.linkedin.com/in/anushse"
   ],
-  "subjectOf": {
-    "@type": "SoftwareSourceCode",
-    "name": "kill-my-cluster",
-    "description": "A Raft key-value store written from scratch in Go, running live with public kill buttons.",
-    "codeRepository": "https://github.com/AnushSonone/kill-my-cluster",
-    "programmingLanguage": "Go",
-    "url": "https://anush.wiki/blog/raft"
-  }
+  "subjectOf": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "kill-my-cluster",
+      "description": "A Raft key-value store written from scratch in Go, running live with public kill buttons.",
+      "codeRepository": "https://github.com/AnushSonone/kill-my-cluster",
+      "programmingLanguage": "Go",
+      "url": "https://anush.wiki/blog/raft"
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "faultline",
+      "description": "An incident replay engine written from scratch in Rust that ranks the root-cause service of a microservice outage with nine inspectable features, running live with a rewindable demo.",
+      "codeRepository": "https://github.com/AnushSonone/faultline",
+      "programmingLanguage": "Rust",
+      "url": "https://anush.wiki/blog/faultline"
+    }
+  ]
 }
 </script>
 </head>
@@ -151,6 +161,16 @@
               by moving gets off the raft log onto readindex leases; and sustained ~1.2k
               replicated writes/s &amp; ~1.5k reads/s on a 4-ocpu box while visitors kill
               machines on purpose.</span>
+</p>
+<p class="project-line">
+<span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/faultline" rel="noopener noreferrer" target="_blank">faultline: a root cause analysis engine for microservice outages</a>
+              - wrote a streaming rca engine from scratch in rust that replays metrics, traces,
+              &amp; logs on one event-time clock and ranks every service by a decomposable score
+              from nine evidence features; built a sql planner over the same operators with
+              crash-safe checkpoints that recover in 0.76ms p99; and benchmarked it against
+              nsigma &amp; baro on real
+              <a href="https://arxiv.org/abs/2412.17015" rel="noopener noreferrer" target="_blank">rcaeval</a>
+              fault injections.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://devpost.com/software/a-wnbv1p" rel="noopener noreferrer" target="_blank">lapsynk: formula 1 ai copilot</a>
