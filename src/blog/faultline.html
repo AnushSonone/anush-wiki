@@ -48,7 +48,7 @@ try to find which service broke! :)
 </p>
 
 <!-- PROD host. For local dev against a laptop API, set data-api-base to http://127.0.0.1:8080 -->
-<link href="/blog/faultline-demo/faultline-demo.css?v=embed-2026-09-04" rel="stylesheet"/>
+<link href="/blog/faultline-demo/faultline-demo.css?v=embed-2026-09-08f" rel="stylesheet"/>
 <section id="faultline-demo-root" class="faultline-demo" aria-label="faultline live demo" data-api-base="https://faultline.anush.wiki">
 <noscript><p>the live demo needs javascript.</p></noscript>
 </section>
@@ -56,9 +56,7 @@ try to find which service broke! :)
 <h2>what this is</h2>
 
 <p>
-faultline is an incident replay engine i wrote from scratch in rust.
-there's no stream-processing library under it, so the event-time clock, the watermarks, the windows, the percentile sketches, the temporal join, the checkpoints, and the root-cause ranking are all mine.
-the ui is react, and the whole thing runs on one small vm behind a cloudflare tunnel, with this page talking to it directly.
+faultline replays a microservice incident like a video: metrics, traces, logs and deployments on one event-time clock, with every service scored for root cause as the evidence lands.
 </p>
 
 <h2>the problem it mocks</h2>
@@ -905,7 +903,7 @@ heavily inspired by
 <div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
 </div>
 </main>
-<script src="/blog/faultline-demo/faultline-demo.iife.js?v=embed-2026-09-04" defer></script>
+<script src="/blog/faultline-demo/faultline-demo.iife.js?v=embed-2026-09-08f" defer></script>
 <script defer src="/api/chat/widget"></script>
 </body>
 </html>
