@@ -164,9 +164,11 @@
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/faultline" rel="noopener noreferrer" target="_blank">faultline: a root cause analysis engine for microservice outages</a>
-              - wrote a streaming rca engine from scratch in rust that replays metrics, traces,
-              &amp; logs on one event-time clock and ranks every service by a decomposable score
-              from nine evidence features; built a sql planner over the same operators with
+              - wrote a streaming rca engine from scratch in rust that rewinds a microservice
+              outage, rebuilding every service's state at any instant in under 50ms by
+              interval-joining arrow streams on event time, and ranks every service in a live
+              dependency graph by a decomposable score from nine evidence features; built a sql
+              planner over the same operators with
               crash-safe checkpoints that recover in 0.76ms p99; and benchmarked it against
               nsigma &amp; baro on real
               <a href="https://arxiv.org/abs/2412.17015" rel="noopener noreferrer" target="_blank">rcaeval</a>
