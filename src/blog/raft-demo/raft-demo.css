@@ -138,9 +138,15 @@
 }
 
 @media (min-width: 1100px) {
+  /* One row of seven. The 20rem floor above suits the wrapped layouts, where
+     content is taller than it anyway; here it stretched every tile and left
+     the kill link stranded ~160px under the numbers. 11.3rem is the tiles'
+     natural height, so space is still reserved before the script draws them
+     but nothing is stretched. */
   .raft-lab__nodes {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.85rem;
+    min-height: 11.3rem;
   }
 }
 
@@ -218,6 +224,123 @@
   opacity: 0.35;
   cursor: not-allowed;
   border-bottom-color: var(--rl-line);
+}
+
+/* A machine's distance from the furthest-ahead commit index. "in sync" is the
+   quiet case and stays muted; falling behind is stated in words, not colour. */
+.raft-lab__node-sync {
+  color: var(--rl-muted);
+}
+
+.raft-lab__node-sync.is-behind {
+  color: var(--rl-ink);
+}
+
+/* Election strip: one lane per machine, the last thirty minutes, sitting
+   directly under the tiles. Same vocabulary as the hand-drawn diagrams further
+   down the page: hairline is a follower, dashed is campaigning, ink is the
+   leader, a cross is the moment a machine went down. No colour - the cues are
+   stroke weight and dash pattern, which survive greyscale and print. */
+/* The space above the strip matches the space below its legend (last
+   sentence to the hairline over grafana, ~85px), so the strip sits evenly
+   between the tiles and the rest of the lab. */
+.raft-elect {
+  margin: 4.72rem 0 1.25rem;
+  padding: 0;
+}
+
+.raft-elect__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The hand-drawn diagrams below use a 720-wide viewBox at a 34rem floor, which
+   is what their 12px labels stay readable at. This strip is 960 wide, so it
+   needs the same ratio to be as legible: below that it scrolls, as they do. */
+.raft-elect__svg {
+  display: block;
+  width: 100%;
+  min-width: 45rem;
+  height: auto;
+  font-family: inherit;
+}
+
+.raft-elect__track {
+  fill: none;
+  stroke: var(--rl-line);
+  stroke-width: 1;
+}
+
+.raft-elect__seg {
+  fill: none;
+}
+
+.raft-elect__seg--follower {
+  stroke: var(--rl-line);
+  stroke-width: 1;
+}
+
+.raft-elect__seg--candidate {
+  stroke: var(--rl-ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* A campaign that began and ended between two samples: we know it happened,
+   not when. Lighter and looser than an observed one. */
+.raft-elect__seg--inferred {
+  stroke: var(--rl-muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.6;
+}
+
+.raft-elect__seg--leader {
+  stroke: var(--rl-ink);
+  stroke-width: 2;
+}
+
+.raft-elect__x {
+  fill: none;
+  stroke: var(--rl-muted);
+  stroke-width: 1.25;
+}
+
+.raft-elect__tick {
+  stroke: var(--rl-line);
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+}
+
+.raft-elect__tick-label,
+.raft-elect__lane-label,
+.raft-elect__axis-label {
+  fill: var(--rl-muted);
+  font-size: 12px;
+}
+
+.raft-elect__lane-label {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+}
+
+/* One sentence per mark, centred under the strip. */
+.raft-elect__legend {
+  margin: 0.9rem 0 0;
+}
+
+.raft-elect__legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--rl-muted);
+}
+
+.raft-elect__legend li {
+  margin: 0;
+  padding: 0;
 }
 
 .raft-lab__controls {

@@ -21,7 +21,7 @@
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <meta content="2026-07-18" property="article:published_time"/>
 <link href="../styles.css" rel="stylesheet"/>
-<link href="/blog/raft-demo/raft-demo.css?v=humble-2026-07-30" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=elect-kill-2026-09-10" rel="stylesheet"/>
 </head>
 <body class="page-blog">
 <a class="skip-link" href="#main">skip to content</a>
@@ -65,6 +65,27 @@ try to kill my cluster! :)
 </div>
 
 <div class="raft-lab__nodes" data-nodes></div>
+
+<figure class="raft-elect" data-elect>
+<div class="raft-elect__scroll">
+<svg class="raft-elect__svg" data-elect-svg viewBox="0 0 960 210" role="img" aria-label="timeline of each machine's raft role and term over the last thirty minutes">
+<g data-elect-terms></g>
+<g data-elect-lanes></g>
+<g data-elect-marks></g>
+<g data-elect-axis></g>
+</svg>
+</div>
+<figcaption class="raft-elect__legend">
+<ul>
+<li>a thin grey line is a machine following the leader.</li>
+<li>a thick black line is the machine that was leader at that moment.</li>
+<li>an × is the moment a machine was killed, by a visitor or the chaos monkey.</li>
+<li>a dashed vertical line marks an election, labelled with the term it started.</li>
+<li>a short grey dash just before a thick line is the campaign that won it.</li>
+</ul>
+</figcaption>
+</figure>
+
 <p class="raft-lab__toast" data-toast></p>
 
 <div class="raft-lab__observability" id="observability">
@@ -684,7 +705,7 @@ heavily inspired by
 <div class="site-chrome__assistant-host" id="wiki-agent-mount"></div>
 </div>
 </main>
-<script src="/blog/raft-demo/raft-demo.js?v=humble-2026-07-30" defer></script>
+<script src="/blog/raft-demo/raft-demo.js?v=elect-kill-2026-09-10" defer></script>
 <script defer src="/api/chat/widget"></script>
 </body>
 </html>
