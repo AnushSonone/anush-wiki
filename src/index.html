@@ -155,7 +155,7 @@
 <h2 class="section-label" id="projects-heading">projects</h2>
 <div class="list-block project-compact">
 <p class="project-line">
-<span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/kill-my-cluster" rel="noopener noreferrer" target="_blank">killmycluster: a self-healing raft-based kv</a>
+<span class="project-body"><a class="project-name" href="/blog/raft">killmycluster: a self-healing raft-based kv</a>
               - wrote a raft key-value store from scratch in go with a crash-safe wal
               &amp; grpc replication, self-healing from leader loss in ~10s; cut read cost
               by moving gets off the raft log onto readindex leases; and sustained ~1.2k
@@ -163,14 +163,11 @@
               machines on purpose.</span>
 </p>
 <p class="project-line">
-<span class="project-body"><a class="project-name" href="https://github.com/AnushSonone/faultline" rel="noopener noreferrer" target="_blank">faultline: a root cause analysis engine for microservice outages</a>
-              - wrote a streaming rca engine from scratch in rust that rewinds a microservice
-              outage, rebuilding every service's state at any instant in under 50ms by
-              interval-joining arrow streams on event time, and ranks every service in a live
-              dependency graph by a decomposable score from nine evidence features; built a sql
-              planner over the same operators with
-              crash-safe checkpoints that recover in 0.76ms p99; and benchmarked it against
-              nsigma &amp; baro on real
+<span class="project-body"><a class="project-name" href="/blog/faultline">faultline: root cause analysis for outages</a>
+              - wrote a streaming rca engine from scratch in rust that rebuilds every service's
+              state at any instant in under 50ms by interval-joining arrow streams; ranked
+              services in a live dependency graph by a nine-feature decomposable score; and
+              benchmarked it against nsigma &amp; baro on real
               <a href="https://arxiv.org/abs/2412.17015" rel="noopener noreferrer" target="_blank">rcaeval</a>
               fault injections.</span>
 </p>
