@@ -328,19 +328,34 @@
   margin: 0.9rem 0 0;
 }
 
+/* The block is centred under the strip; its lines are left-aligned inside it
+   so every mark sits in one column and every sentence starts at the same x. */
 .raft-elect__legend ul {
   list-style: none;
-  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   padding: 0;
-  text-align: center;
+  text-align: left;
   font-size: 0.85rem;
   line-height: 1.65;
   color: var(--rl-muted);
 }
 
 .raft-elect__legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: 0;
   padding: 0;
+}
+
+/* The mark itself, drawn with the strip's own classes, in place of its name. */
+.raft-elect__key {
+  flex: none;
+  width: 36px;
+  height: 16px;
+  overflow: visible;
 }
 
 .raft-lab__controls {

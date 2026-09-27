@@ -21,7 +21,7 @@
 <meta content="https://anush.wiki/about/selfie.jpeg" name="twitter:image"/>
 <meta content="2026-07-18" property="article:published_time"/>
 <link href="../styles.css" rel="stylesheet"/>
-<link href="/blog/raft-demo/raft-demo.css?v=elect-kill-2026-09-10" rel="stylesheet"/>
+<link href="/blog/raft-demo/raft-demo.css?v=elect-key-2026-09-27" rel="stylesheet"/>
 </head>
 <body class="page-blog">
 <a class="skip-link" href="#main">skip to content</a>
@@ -81,11 +81,11 @@ try to kill my cluster! :)
 </div>
 <figcaption class="raft-elect__legend">
 <ul>
-<li>a thin grey line is a machine following the leader.</li>
-<li>a thick black line is the machine that was leader at that moment.</li>
-<li>an × is the moment a machine was killed, by a visitor or the chaos monkey.</li>
-<li>a dashed vertical line marks an election, labelled with the term it started.</li>
-<li>a short grey dash just before a thick line is the campaign that won it.</li>
+<li><svg class="raft-elect__key" viewBox="0 0 36 16" aria-hidden="true"><path class="raft-elect__seg raft-elect__seg--follower" d="M2 8H34"/></svg> is a machine following the leader.</li>
+<li><svg class="raft-elect__key" viewBox="0 0 36 16" aria-hidden="true"><path class="raft-elect__seg raft-elect__seg--leader" d="M2 8H34"/></svg> is the machine that was leader at that moment.</li>
+<li><svg class="raft-elect__key" viewBox="0 0 36 16" aria-hidden="true"><path class="raft-elect__x" d="M14 4L22 12M14 12L22 4"/></svg> is the moment a machine was killed, by a visitor or the chaos monkey.</li>
+<li><svg class="raft-elect__key" viewBox="0 0 36 16" aria-hidden="true"><line class="raft-elect__tick" x1="18" y1="0" x2="18" y2="16"/></svg> marks an election, labelled with the term it started.</li>
+<li><svg class="raft-elect__key" viewBox="0 0 36 16" aria-hidden="true"><path class="raft-elect__seg raft-elect__seg--inferred" d="M2 8H14"/><path class="raft-elect__seg raft-elect__seg--leader" d="M14 8H34"/></svg> is the campaign that won an election, just before that machine led.</li>
 </ul>
 </figcaption>
 </figure>
