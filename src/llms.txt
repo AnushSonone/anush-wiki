@@ -1,6 +1,6 @@
 # anush sonone
 
-> cs @ ut austin, class of 2028, business minor. incoming ai engineering intern at pwc
+> cs @ ut austin, class of 2028, business minor. ai engineering intern at pwc
 > on the tide (tax innovation & delivery experience) team. works on products,
 > infrastructure, and distributed systems, usually with data and a bit of ml.
 
@@ -39,7 +39,11 @@ every page below is plain html and safe to read directly.
 
 ## experience
 
-- **pwc** — incoming ai engineering intern, fall 2026.
+- **pwc** — ai engineering intern, fall 2026, tide team. designing agent infrastructure
+  on azure that reads partnership and llc agreements into a strict json schema for tax
+  reviewers: service bus jobs, container apps workers with retries and a dead-letter
+  queue, document intelligence plus a foundry model, a validation gate before azure sql,
+  and a read-only agent for reviewer questions. design stage, not yet built.
 - **visa** — langgraph workflows for user provisioning; postgres-backed knowledge graph
   for entitlement routing; redis streams with retries and dlq.
 - **afterquery (yc w25)** — agent eval pipelines for tool-calling; python harnesses on
