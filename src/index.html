@@ -30,7 +30,7 @@
   "url": "https://anush.wiki/",
   "email": "mailto:anushse@utexas.edu",
   "jobTitle": "Software Engineer",
-  "description": "CS student at UT Austin working on products, infrastructure, and distributed systems. AI engineering intern at PwC, designing agent infrastructure on Azure.",
+  "description": "CS student at UT Austin working on products, infrastructure, and distributed systems. AI engineering intern at PwC, building LLM agreement extraction on Azure.",
   "alumniOf": {
     "@type": "CollegeOrUniversity",
     "name": "The University of Texas at Austin"
@@ -114,25 +114,27 @@
 <div class="list-block project-compact">
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://www.pwc.com/us/en.html" rel="noopener noreferrer" target="_blank">@pwc</a>
-              - designing azure agent infra to cut manual partnership-agreement review for
-              tax reviewers; extracting each agreement once into a strict json schema with a
-              foundry model; and gating every field on source evidence before it's saved.</span>
+              - saved the tax team 15+ hrs/week in pilot by chunking llc agreements into
+              schema-locked llms for ownership terms; processed 150+ page agreements in
+              under 5 min by fanning chunks on service bus to workers with idempotent retries;
+              and auto-accepted 80%+ of fields at 98% accuracy on 200+ agreements by checking
+              llm citations against clauses.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://www.visa.com/en-us/solutions/visa-protect/issuers" rel="noopener noreferrer" target="_blank">@visa</a>
-              - cut onboarding from 3 mos to 3 days in pilot by building langgraph agents
-              to provision banks onto risk products; achieved 90%+ service grant accuracy
-              by architecting a postgres-backed knowledge graph for entitlement routing;
-              and drove notif loss to near-zero on 16k+ events by relaying a transactional
-              postgres outbox to redis streams workers.</span>
+              - cut risk suite onboarding from 3 mos to 3 days in pilot by deploying agent
+              &amp; notif services on eks fargate &amp; rds; guaranteed crash-safe iam writes
+              &amp; notifs by committing both atomically via a transactional postgres outbox;
+              and delivered 16k+ notifs at-least-once by reclaiming crashed redis streams
+              worker jobs with backoff retries &amp; a dlq.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://www.afterquery.com/" rel="noopener noreferrer" target="_blank">@afterquery (yc w25)</a>
-              - lifted manus ai's tool-call accuracy by 18% across 2m+ users by creating a
-              react/fastapi eval app for the ml team; graded 10k+ replayed agent runs on
-              answer correctness &amp; redundant tool calls against human-researched truth;
-              and accelerated model retraining by 20% across 10 task domains by clustering
-              failures into relabeled dataset versions.</span>
+              - lifted manus ai's browser-agent accuracy 18% by building an s3 artifact store
+              to replay bad/failed agent tool calls; persisted each agent action's dom snapshot,
+              pre/post screenshots &amp; har logs from k8s playwright pods to s3; and eliminated
+              corrupt replays across pod crashes by isolating retries in per-attempt s3 prefixes
+              &amp; postgres txns.</span>
 </p>
 <p class="project-line">
 <span class="project-body"><a class="project-name" href="https://profluento.dev/" rel="noopener noreferrer" target="_blank">@profluento ai</a>

@@ -1,7 +1,7 @@
 # anush sonone
 
-> cs @ ut austin, class of 2028, business minor. ai engineering intern at pwc
-> on the tide (tax innovation & delivery experience) team. works on products,
+> cs @ ut austin, class of 2028, business minor. ai engineering intern at pwc,
+> building llm agreement extraction for the tax team. works on products,
 > infrastructure, and distributed systems, usually with data and a bit of ml.
 
 this site is a personal wiki: semantic html, one stylesheet, no framework runtime.
@@ -39,15 +39,20 @@ every page below is plain html and safe to read directly.
 
 ## experience
 
-- **pwc** — ai engineering intern, fall 2026, tide team. designing agent infrastructure
-  on azure that reads partnership and llc agreements into a strict json schema for tax
-  reviewers: service bus jobs, container apps workers with retries and a dead-letter
-  queue, document intelligence plus a foundry model, a validation gate before azure sql,
-  and a read-only agent for reviewer questions. design stage, not yet built.
-- **visa** — langgraph workflows for user provisioning; postgres-backed knowledge graph
-  for entitlement routing; redis streams with retries and dlq.
-- **afterquery (yc w25)** — agent eval pipelines for tool-calling; python harnesses on
-  deterministic truths and diffs.
+- **pwc** — ai engineering intern, oct-nov 2026. chunks llc agreements into
+  schema-locked llms that extract ownership terms, saving the tax team 15+ hrs/week in
+  pilot. 150+ page agreements finish in under 5 min by fanning chunks over azure service
+  bus to workers with idempotent retries. 80%+ of fields auto-accept at 98% accuracy on
+  200+ agreements by checking each llm citation against the source clause.
+- **visa** — deployed agent and notification services on eks fargate and rds, cutting
+  risk suite onboarding from 3 months to 3 days in pilot. iam writes and notifications
+  commit atomically through a transactional postgres outbox; redis streams workers
+  reclaim crashed jobs with backoff retries and a dlq, delivering 16k+ notifications
+  at-least-once.
+- **afterquery (yc w25)** — s3 artifact store that replays bad and failed browser-agent
+  tool calls, lifting manus ai's browser-agent accuracy 18%. persists each action's dom
+  snapshot, pre/post screenshots and har logs from kubernetes playwright pods; per-attempt
+  s3 prefixes and postgres transactions keep replays intact across pod crashes.
 - **cdk global** — iam "super admin" role across 44k+ dealerships; per-request auth with
   node.js and dynamodb.
 

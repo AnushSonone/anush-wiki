@@ -33,16 +33,7 @@ const BLOG_FOR_ENTRY: Record<string, string> = {
  * Entries whose résumé line is too thin to ground on. The note replaces the parsed
  * résumé text for that entry id; keep it in step with the home page line.
  */
-const ENTRY_NOTES: Record<string, string> = {
-  pwc: [
-    'PwC, AI Engineering Intern, TIDE (Tax Innovation & Delivery Experience) team, Austin, TX, Oct 2026 - Nov 2026. This is his current internship.',
-    'Status: design stage. Anush is designing the system; nothing is built, deployed, or in use yet. Never say it runs or has users, and never give accuracy, time-saved, or cost numbers, because none exist.',
-    'What it is: agent infrastructure on Azure that reads partnership and LLC operating agreements for tax reviewers and pulls the terms a return depends on into one strict JSON schema with six blocks: entity, parties, members (ownership, capital contributions), governance (managers, voting thresholds), economics (distribution waterfall, preferred return), and transfer restrictions (right of first refusal, tag-along, drag-along).',
-    'Infrastructure: an intake API checks the PDF and access rights, stores the original in Blob Storage with a version, and queues a job on Azure Service Bus. Workers on Azure Container Apps pull the job, extract text, tables and page references with Azure Document Intelligence, then make one Foundry model call with strict structured output against the schema. Bounded retries, idempotent writes, and a dead-letter queue for jobs that exhaust them. A validation gate checks schema, business rules and source evidence; anything that fails goes to a hold-for-review queue instead of the database. Validated terms land in Azure SQL with a page and clause reference per field. Entra ID with managed identities and per-agreement authorization.',
-    'Review side: reviewers browse each agreement as a graph drawn from the relational data; picking a field opens the clause it came from, and the reviewer confirms or corrects it. A read-only question-answering agent sees only the relevant clauses, which limits cost and the prompt-injection surface.',
-    'Design choices: extraction is a single bounded model call rather than an agent loop, since there is nothing for an agent to decide; Document Intelligence runs before the model to cut tokens and supply citations; Azure SQL rather than a graph database, since the graph is only a view; human reviewers stay accountable for every finding.',
-  ].join('\n'),
-};
+const ENTRY_NOTES: Record<string, string> = {};
 
 /** Human labels for the one-line index the model always sees. Order is display order. */
 const INDEX_LABELS: Array<[string, string]> = [

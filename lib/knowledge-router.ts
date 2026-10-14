@@ -12,8 +12,8 @@ export const ROUTE_CHAR_BUDGET = 3000;
 /** Chunk id → trigger. Order matters only as a tie-break within one message. */
 const TAGS: Array<[string, RegExp]> = [
   ['pwc', /\b(pwc|pricewaterhouse|tide|tax|azure|agreements?|foundry|service bus|document intelligence)\b/i],
-  ['visa', /\bvisa\b/i],
-  ['afterquery', /\b(after ?query|manus|yc ?w25)\b/i],
+  ['visa', /\b(visa|outbox|redis streams?|eks|fargate)\b/i],
+  ['afterquery', /\b(after ?query|manus|yc ?w25|playwright|browser[- ]agents?)\b/i],
   ['profluento-ai', /\b(profluento|co-?founder|cto|startup|lead scoring|wealth)\b/i],
   ['cdk-global', /\b(cdk|dealerships?|iam)\b/i],
   ['killmycluster', /\b(kill ?my ?cluster|kmc|raft|kv store|key[- ]?value|consensus|leader election|wal)\b/i],
